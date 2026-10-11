@@ -1,0 +1,8 @@
+{
+    "files.encoding": "utf8",
+    "liveServer.settings.root": "/",
+    "liveServer.settings.port": 5500,
+    "livePreview.defaultPreviewPath": "/index.html",
+    "html.format.enable": true,
+    "editor.wordWrap": "on"
+}

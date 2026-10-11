@@ -1,0 +1,1 @@
+agy -c --dangerously-skip-permissions
