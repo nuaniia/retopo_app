@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS `users` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
-    `full_name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(100) NOT NULL,
     `role` ENUM('admin', 'user') DEFAULT 'user',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -59,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `faqs` (
 -- Seed Users:
 -- Admin: admin / admin123
 -- User: student / user123
-INSERT INTO `users` (`username`, `password`, `full_name`, `email`, `role`) VALUES
+INSERT INTO `users` (`username`, `password`, `email`, `role`) VALUES
 ('admin', '$2y$10$wOqJ0pL4m8xIq.1LzBvGguQW5u4rFfMhA0ZqK9n0t6z5mXg/R.sS6', 'ผู้ดูแลระบบสูงสุด (System Admin)', 'admin@retopo.ai', 'admin'),
 ('student', '$2y$10$fW3CjZ1T1yM2w0pQxKj5O.7V1u2sDfHhB0AqL9o0u6a5nXh/S.tT7', 'นักศึกษาทดสอบระบบ (Student User)', 'student@university.ac.th', 'user')
 ON DUPLICATE KEY UPDATE `username`=`username`;

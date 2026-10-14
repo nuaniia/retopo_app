@@ -308,6 +308,7 @@ async function handleLoginSubmit(e) {
 
 async function handleRegisterSubmit(e) {
     e.preventDefault();
+    // ดึงค่าเฉพาะช่องที่มีอยู่จริงใน HTML ปัจจุบัน
     const username = document.getElementById('regUsername').value.trim();
     const email = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value.trim();
@@ -321,6 +322,7 @@ async function handleRegisterSubmit(e) {
         formData.append('username', username);
         formData.append('email', email);
         formData.append('password', password);
+        formData.append('full_name', username);
 
         const res = await fetch('api.php?action=register', {
             method: 'POST',
