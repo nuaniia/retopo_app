@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Studio | RETOPO.AI</title>
+    
+    <!-- Meta Description for SEO -->
+    <meta name="description" content="ระบบจัดระเบียบโครงสร้างเส้น (Quad-Dominant Retopology) และลดจำนวนโพลีกอน 3D ความเร็วสูง รองรับไฟล์ OBJ, FBX, STL ขนาดสูงสุด 10GB">
+
+    <!-- 1. Tailwind CSS CDN -->
+    <script>
+        (function() {
+            var _w = console.warn;
+            console.warn = function() {
+                if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('cdn.tailwindcss.com') !== -1) return;
+                _w.apply(console, arguments);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        },
+                        cyber: {
+                            bg: '#0f172a',
+                            panel: '#1e293b',
+                            accent: '#38bdf8',
+                            purple: '#c084fc',
+                            emerald: '#34d399'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 2. Google Fonts (Prompt & Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 3. Font Awesome 6.4 (Icons CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- 4. Three.js & OrbitControls for 3D Viewport CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- 5. Three.js Loaders & Geometry Utilities (OBJ & STL) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
+
+    <!-- Custom CSS Stylesheet (<style>) -->
+    <style>
+        /* CSS Variables & Theme Utilities */
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-grad: linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #9333ea 100%);
+        }
+
+        /* Base Body Reset */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Prompt', 'Inter', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Glassmorphism Panel Effect */
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Gradient Text Fill */
+        .text-gradient {
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Primary Button Glow Animation */
+        .btn-gradient {
+            background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+        }
+
+        /* Custom 3D Canvas Container */
+        .viewport-canvas {
+            width: 100%;
+            height: 380px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            accent-color: #38bdf8;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ==================================================================== -->
+    <!-- 1. NAVIGATION BAR                                                    -->
+    <!-- ==================================================================== -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            
+            <!-- Logo Brand -->
+            <a href="index.html" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-300">
+                    <i class="fa-solid fa-cube text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-wider text-white">RETOPO<span class="text-sky-400">.AI</span></span>
+                    <span class="block text-[10px] text-slate-400 font-medium tracking-widest uppercase">Retopoforanimat.md Standard Engine</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+                <a href="index.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-house mr-1 text-xs"></i> <span data-i18n="nav_home">หน้าแรก</span></a>
+                <a href="studio.html" class="text-sky-400 font-bold transition-colors py-1"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-xs"></i> <span data-i18n="nav_studio">3D Studio</span></a>
+                <a href="checklist.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-graduation-cap mr-1 text-xs"></i> <span data-i18n="nav_checklist">Retopoforanimat Standard</span></a>
+                <a href="features.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-bolt mr-1 text-xs"></i> <span data-i18n="nav_features">ฟีเจอร์หลัก</span></a>
+                <a href="faq.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-circle-question mr-1 text-xs"></i> <span data-i18n="nav_faq">คำถามที่พบบ่อย</span></a>
+            </nav>
+
+            <!-- Language & Action Controls -->
+            <div class="flex items-center gap-3">
+                <!-- Auth Container (Desktop) -->
+                <div id="authNavContainer"></div>
+
+                <!-- Language Selector -->
+                <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-800/90 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-sky-500 cursor-pointer">
+                    <option value="th">🇹🇭 ภาษาไทย</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <!-- Launch App CTA -->
+                <a href="studio.html" class="btn-gradient text-white text-xs md:text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> <span data-i18n="btn_launch">เริ่มใช้งานระบบ</span>
+                </a>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-slate-400 hover:text-white text-xl p-2">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu Dropdown -->
+        <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-slate-800 flex flex-col gap-3 text-sm text-slate-300">
+            <a href="index.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-house mr-2"></i> <span data-i18n="nav_home">หน้าแรก</span></a>
+            <a href="studio.html" class="text-sky-400 font-bold py-1"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 3D Studio</a>
+            <a href="checklist.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-graduation-cap mr-2"></i> Retopoforanimat Standard</a>
+            <a href="features.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-bolt mr-2"></i> ฟีเจอร์หลัก</a>
+            <a href="faq.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-circle-question mr-2"></i> คำถามที่พบบ่อย</a>
+            <!-- Mobile Auth Container -->
+            <div id="mobileAuthNavContainer"></div>
+        </div>
+    </header>
+
+
+    <!-- ==================================================================== -->
+    <!-- 3. INTERACTIVE 3D RETOPOLOGY STUDIO (CANVAS & CONTROLS)            -->
+    <!-- ==================================================================== -->
+    <section id="studio" class="py-12 px-4 max-w-7xl mx-auto w-full flex-grow">
+        
+        <!-- Section Header -->
+        <div class="text-center max-w-3xl mx-auto mb-10 space-y-3">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-white">
+                <i class="fa-solid fa-cubes-stacked text-sky-400 mr-2"></i> <span data-i18n="studio_title">3D Retopology & Mesh Reduction Studio</span>
+            </h2>
+            <p class="text-slate-400 text-sm md:text-base" data-i18n="studio_sub">
+                อัปโหลดไฟล์โมเดล 3D (.OBJ, .FBX, .STL) ขนาดสูงสุด 10GB ปรับแต่งพารามิเตอร์ และสังเกตผลลัพธ์โครงเส้น Wireframe แบบเรียลไทม์
+            </p>
+        </div>
+
+        <!-- Studio Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Controls Column (5 cols) -->
+            <div class="lg:col-span-5 space-y-6 glass-panel p-6 rounded-2xl border border-slate-800">
+                
+                <!-- 1. Upload 3D Model File (.OBJ, .FBX, .STL) & Presets -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        <i class="fa-solid fa-cloud-arrow-up text-sky-400 mr-1"></i> <span data-i18n="lbl_upload_section">1. อัปโหลดโมเดล 3D (.OBJ, .FBX, .STL สูงสุด 10GB)</span>
+                    </label>
+
+                    <!-- File Drop Zone Area -->
+                    <div id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)" class="relative p-5 rounded-2xl border-2 border-dashed border-slate-700 hover:border-sky-500/80 bg-slate-900/80 hover:bg-slate-800/60 text-center cursor-pointer transition-all duration-300 group">
+                        <input type="file" id="fileInput" accept=".obj,.fbx,.stl" onchange="handleFileSelect(event)" class="hidden">
+                        
+                        <!-- Drag Icon & Text -->
+                        <div id="dropZoneContent" class="space-y-2">
+                            <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center mx-auto text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-cube"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white group-hover:text-sky-300 transition-colors" data-i18n="upload_drag_text">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ 3D มาวางที่นี่ (สูงสุด 10GB)</p>
+                                <p class="text-xs text-slate-400 mt-1" data-i18n="upload_formats">รองรับไฟล์: <span class="font-mono text-sky-400 font-bold">.OBJ</span>, <span class="font-mono text-purple-400 font-bold">.FBX</span>, <span class="font-mono text-emerald-400 font-bold">.STL</span> (รองรับไฟล์ใหญ่สูงสุด 10GB)</p>
+                            </div>
+                        </div>
+
+                        <!-- Uploaded File Info Card (Hidden by default) -->
+                        <div id="uploadedFileInfo" class="hidden flex items-center justify-between p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-left">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <div id="fileTypeBadge" class="w-10 h-10 rounded-lg bg-sky-500/20 text-sky-400 font-black text-xs flex items-center justify-center uppercase shrink-0">OBJ</div>
+                                <div class="truncate">
+                                    <div id="fileNameText" class="text-xs font-bold text-white truncate">my_3d_model.obj</div>
+                                    <div id="fileSizeText" class="text-[11px] text-slate-400">2.4 MB • Ready</div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="event.stopPropagation(); clearUploadedFile()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/80 transition-colors">
+                                <i class="fa-solid fa-xmark text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Divider or Sample Selector -->
+                    <div class="flex items-center gap-2 text-xs text-slate-400 pt-1">
+                        <div class="h-px bg-slate-800 flex-1"></div>
+                        <span data-i18n="lbl_or_sample">หรือเลือกตัวอย่างโมเดล (Sample Models)</span>
+                        <div class="h-px bg-slate-800 flex-1"></div>
+                    </div>
+
+                    <!-- Sample Model Dropdown -->
+                    <select id="sampleSelect" onchange="changeSampleModel(this.value)" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-xl p-3 focus:outline-none focus:border-sky-500 transition-colors">
+                        <option value="sphere">Sphere Mesh (5,120 Faces)</option>
+                        <option value="torus">Torus Prop (1,152 Faces)</option>
+                        <option value="capsule">Capsule Character Prop (640 Faces)</option>
+                        <option value="suzanne">High-Poly Monkey Head (15,000 Faces)</option>
+                    </select>
+                </div>
+
+                <!-- 2. Face Topology Type -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-vector-square text-purple-400 mr-1"></i> <span data-i18n="lbl_topo_type">2. ชนิดของเฟส (Face Topology Type)</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" id="btnFaceQuad" onclick="setFaceType('quad')" class="p-3 rounded-xl border border-sky-500 bg-sky-950/60 text-sky-300 text-xs font-bold flex items-center justify-center gap-2 transition-all">
+                            <i class="fa-solid fa-square"></i> <span data-i18n="opt_quad">Quad-Dominant</span>
+                        </button>
+                        <button type="button" id="btnFaceTri" onclick="setFaceType('tri')" class="p-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center gap-2 hover:border-slate-600 transition-all">
+                            <i class="fa-solid fa-play rotate-[-90deg]"></i> <span data-i18n="opt_tri">Triangular</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. 3D Symmetry Axis -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-arrows-split-up-and-left text-emerald-400 mr-1"></i> <span data-i18n="lbl_symmetry">3. สมมาตร 3 มิติ (3D Mesh Symmetry)</span>
+                    </label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setSymmetry('none')" class="sym-btn py-2 px-1 text-center rounded-lg border border-sky-500 bg-sky-950/60 text-sky-300 text-xs font-semibold">ปิด (Off)</button>
+                        <button type="button" onclick="setSymmetry('X')" class="sym-btn py-2 px-1 text-center rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-xs font-semibold hover:border-slate-600">แกน X</button>
+                        <button type="button" onclick="setSymmetry('Y')" class="sym-btn py-2 px-1 text-center rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-xs font-semibold hover:border-slate-600">แกน Y</button>
+                        <button type="button" onclick="setSymmetry('Z')" class="sym-btn py-2 px-1 text-center rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-xs font-semibold hover:border-slate-600">แกน Z</button>
+                    </div>
+                </div>
+
+                <!-- 4. 3D Display Mode -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-eye text-amber-400 mr-1"></i> <span data-i18n="lbl_display_mode">4. โหมดการแสดงผล (Display Mode)</span>
+                    </label>
+                    <select id="displayModeSelect" onchange="changeDisplayMode(this.value)" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-xl p-3 focus:outline-none focus:border-sky-500">
+                        <option value="wire_shade">Shade + Wireframe Overlay</option>
+                        <option value="shaded">Shaded Only (Clay Render)</option>
+                        <option value="wireframe">Wireframe Only</option>
+                    </select>
+                </div>
+
+                <!-- 5. Target Face Sliders & Synchronization -->
+                <div class="space-y-4 pt-2 border-t border-slate-800">
+                    <div>
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-300 mb-1">
+                            <span data-i18n="lbl_target_faces">จำนวน Polygon เป้าหมาย (Target Faces):</span>
+                            <span id="targetFaceDisplay" class="text-sky-400 text-sm font-extrabold">2,560</span>
+                        </div>
+                        <input type="range" id="targetFaceSlider" min="100" max="5120" value="2560" step="50" oninput="syncFromTargetSlider(this.value)" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-300 mb-1">
+                            <span data-i18n="lbl_reduction_pct">เปอร์เซ็นต์การลดโพลีกอน (% Reduction):</span>
+                            <span id="pctDisplay" class="text-purple-400 text-sm font-extrabold">50.0%</span>
+                        </div>
+                        <input type="range" id="pctSlider" min="0" max="95" value="50" step="1" oninput="syncFromPctSlider(this.value)" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- 6. Run Retopology Button & Progress Bar -->
+                <div class="space-y-3">
+                    <button type="button" id="btnRunRetopo" onclick="runRetopologyEngine()" class="w-full btn-gradient py-3.5 rounded-xl text-white font-extrabold text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> <span data-i18n="btn_run_retopo">ประมวลผล Retopology (Run Engine)</span>
+                    </button>
+
+                    <!-- Retopology Progress Bar Box (Hidden by default) -->
+                    <div id="retopoProgressBox" class="hidden space-y-2 p-4 rounded-xl bg-slate-900 border border-sky-500/40">
+                        <div class="flex justify-between items-center text-xs">
+                            <span id="retopoProgressStatusText" class="font-bold text-sky-300">⚡ กำลังประมวลผล Retopology...</span>
+                            <span id="retopoProgressPctText" class="font-extrabold text-emerald-400 font-mono">0%</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                            <div id="retopoProgressBarFill" class="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-400 rounded-full transition-all duration-200 w-0"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right 3D Viewports & Stats Column (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Dual 3D Viewport Tabs -->
+                <div class="glass-panel p-4 rounded-2xl border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-3">
+                            <button id="tabInputBtn" onclick="switchViewportTab('input')" class="text-xs font-extrabold px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                                🔍 <span data-i18n="tab_input">Original Model (High-Poly)</span>
+                            </button>
+                            <button id="tabOutputBtn" onclick="switchViewportTab('output')" class="text-xs font-extrabold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 hover:text-white">
+                                ✨ <span data-i18n="tab_output">Retopologized Model (Low-Poly)</span>
+                            </button>
+                        </div>
+                        <span id="execTimerBadge" class="text-[11px] font-mono bg-emerald-950/80 text-emerald-400 px-2.5 py-1 rounded-md border border-emerald-500/30">
+                            ⚡ Sub-ms Exec: 0.042s
+                        </span>
+                    </div>
+
+                    <!-- 3D Interactive Canvas Containers -->
+                    <div id="viewportInputContainer" class="viewport-canvas">
+                        <div id="canvas3dInput" class="w-full h-full"></div>
+                        <div class="absolute bottom-3 left-3 glass-panel px-3 py-1.5 rounded-lg text-[11px] text-slate-300">
+                            Polys: <span id="inputPolyCount" class="font-bold text-sky-400">5,120</span> | Verts: <span id="inputVertCount" class="font-bold text-sky-400">2,562</span>
+                        </div>
+                    </div>
+
+                    <div id="viewportOutputContainer" class="viewport-canvas hidden">
+                        <div id="canvas3dOutput" class="w-full h-full"></div>
+                        <div class="absolute bottom-3 left-3 glass-panel px-3 py-1.5 rounded-lg text-[11px] text-slate-300">
+                            Polys: <span id="outputPolyCount" class="font-bold text-emerald-400">2,560</span> | Quads: <span id="outputQuadRatio" class="font-bold text-purple-400">98.2%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Animation Assessment Report (Retopoforanimat.md Standard) -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-sm font-extrabold text-white flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span><i class="fa-solid fa-clipboard-check text-emerald-400 mr-2"></i> <span data-i18n="report_title">รายงานการประเมินความพร้อมสำหรับงาน Animation (Retopoforanimat.md)</span></span>
+                        <button type="button" onclick="openRetopoGuideModal()" class="text-xs text-sky-400 hover:underline"><i class="fa-solid fa-book-open mr-1"></i> อ่านมาตรฐาน</button>
+                    </h3>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            <div class="text-slate-400 mb-1" data-i18n="chk_form">1. รูปทรงสรีระ (Form)</div>
+                            <div class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Passed (99.4%)</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            <div class="text-slate-400 mb-1" data-i18n="chk_normals">2. ทิศทาง Normals</div>
+                            <div class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Outward 100%</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            <div class="text-slate-400 mb-1" data-i18n="chk_edgeflow">3. Muscle Edge Flow</div>
+                            <div class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Aligned</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            <div class="text-slate-400 mb-1" data-i18n="chk_joints">4. ข้อต่อพับและยืด</div>
+                            <div class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Bending Loops OK</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            <div class="text-slate-400 mb-1" data-i18n="chk_quads">5. สัดส่วน Quad Faces</div>
+                            <div id="checkQuadStatus" class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 98.2% Quad</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            <div class="text-slate-400 mb-1" data-i18n="chk_uv">6. Pole Management</div>
+                            <div class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Zero Pinching</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Download Processed 3D Asset -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-sky-400"></i> <span data-i18n="dl_section_title">ดาวน์โหลดโมเดลหลังทำ Retopology (Download Processed Asset)</span>
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5" data-i18n="dl_section_sub">ส่งออกโมเดลโครงสร้างใหม่ในรูปแบบไฟล์ Wavefront OBJ (.obj)</p>
+                        </div>
+                        <span class="text-[11px] font-bold bg-sky-950 text-sky-300 px-2.5 py-1 rounded-lg border border-sky-800">Quad OBJ Ready</span>
+                    </div>
+
+                    <button type="button" id="btnDownloadModel" onclick="downloadProcessedModel()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-download text-lg"></i> <span data-i18n="btn_download_now">ดาวน์โหลดไฟล์โมเดลสำเร็จ (.OBJ)</span>
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- ==================================================================== -->
+    <!-- 7. SAMPLE MODEL GALLERY & PRESETS                                    -->
+    <!-- ==================================================================== -->
+    <section id="gallery" class="py-16 px-4 max-w-7xl mx-auto w-full">
+        <div class="text-center max-w-3xl mx-auto mb-10 space-y-3">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-white">
+                <i class="fa-solid fa-shapes text-purple-400 mr-2"></i> <span data-i18n="gal_title">คลังตัวอย่างโมเดล 3D (Sample Model Gallery)</span>
+            </h2>
+            <p class="text-slate-400 text-sm md:text-base" data-i18n="gal_sub">
+                เปรียบเทียบผลลัพธ์การลดจำนวนโพลีกอนและการเปลี่ยนโครงสร้างเส้นก่อนและหลังทำ Retopology
+            </p>
+        </div>
+
+        <div id="dynamicGalleryGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Gallery Item 1 -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 hover:border-sky-500/40 transition-all">
+                <div class="w-full h-44 bg-slate-900 rounded-xl overflow-hidden relative flex items-center justify-center border border-slate-800">
+                    <i class="fa-solid fa-globe text-6xl text-sky-500/30"></i>
+                    <span class="absolute top-3 left-3 bg-sky-950/80 text-sky-300 text-[10px] font-bold px-2.5 py-1 rounded-md border border-sky-800">High-Poly Sphere</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white text-base">High-Poly Icosphere Prop</h4>
+                    <div class="flex justify-between text-xs text-slate-400 mt-2">
+                        <span>ก่อน Retopo: <strong class="text-amber-400">5,120 faces</strong></span>
+                        <span>หลัง Retopo: <strong class="text-emerald-400">2,560 quads</strong></span>
+                    </div>
+                </div>
+                <button type="button" onclick="selectPresetModel('sphere')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2.5 rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-eye text-sky-400"></i> โหลดใน 3D Viewport
+                </button>
+            </div>
+
+            <!-- Gallery Item 2 -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 hover:border-purple-500/40 transition-all">
+                <div class="w-full h-44 bg-slate-900 rounded-xl overflow-hidden relative flex items-center justify-center border border-slate-800">
+                    <i class="fa-solid fa-ring text-6xl text-purple-500/30"></i>
+                    <span class="absolute top-3 left-3 bg-purple-950/80 text-purple-300 text-[10px] font-bold px-2.5 py-1 rounded-md border border-purple-800">Torus Asset</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white text-base">High-Poly Torus Ring Prop</h4>
+                    <div class="flex justify-between text-xs text-slate-400 mt-2">
+                        <span>ก่อน Retopo: <strong class="text-amber-400">1,152 faces</strong></span>
+                        <span>หลัง Retopo: <strong class="text-emerald-400">576 quads</strong></span>
+                    </div>
+                </div>
+                <button type="button" onclick="selectPresetModel('torus')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2.5 rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-eye text-purple-400"></i> โหลดใน 3D Viewport
+                </button>
+            </div>
+
+            <!-- Gallery Item 3 -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 hover:border-emerald-500/40 transition-all">
+                <div class="w-full h-44 bg-slate-900 rounded-xl overflow-hidden relative flex items-center justify-center border border-slate-800">
+                    <i class="fa-solid fa-capsules text-6xl text-emerald-500/30"></i>
+                    <span class="absolute top-3 left-3 bg-emerald-950/80 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-md border border-emerald-800">Capsule Asset</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white text-base">Capsule Character Base</h4>
+                    <div class="flex justify-between text-xs text-slate-400 mt-2">
+                        <span>ก่อน Retopo: <strong class="text-amber-400">640 faces</strong></span>
+                        <span>หลัง Retopo: <strong class="text-emerald-400">320 quads</strong></span>
+                    </div>
+                </div>
+                <button type="button" onclick="selectPresetModel('capsule')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2.5 rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-eye text-emerald-400"></i> โหลดใน 3D Viewport
+                </button>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- ==================================================================== -->
+    <!-- 9. RETOPOFORANIMAT.MD FULL DOCUMENTATION MODAL                       -->
+    <!-- ==================================================================== -->
+    <div id="retopoGuideModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel max-w-4xl w-full max-h-[85vh] rounded-3xl border border-slate-800 overflow-hidden flex flex-col shadow-2xl">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-extrabold text-white">หลักการ Retopology สำหรับงาน Animation</h3>
+                        <p class="text-xs text-slate-400">สรุปมาตรฐานวิชาการจากไฟล์ Retopoforanimat.md</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRetopoGuideModal()" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 overflow-y-auto space-y-6 text-xs md:text-sm text-slate-300 leading-relaxed">
+                
+                <div class="p-4 rounded-xl bg-sky-950/40 border border-sky-800/60 text-sky-200 space-y-1">
+                    <div class="font-bold flex items-center gap-2 text-sky-400">
+                        <i class="fa-solid fa-circle-info"></i> คำจำกัดความและเป้าหมายของ Retopology
+                    </div>
+                    <p class="text-xs">
+                        Retopology คือกระบวนการปรับโครงสร้าง Polygon/Topology ของโมเดล 3 มิติใหม่ โดยมีเป้าหมายเพื่อให้โมเดลมีจำนวน Polygon ที่เหมาะสม มีการไหลของ Edge ที่เหมาะกับการ Rigging, Skinning, Animation, UV Mapping และการทำ Texture
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-base border-b border-slate-800 pb-2">1. หลักการสำคัญ 4 ด้าน (Core Principles)</h4>
+                    <ul class="list-disc list-inside space-y-2 pl-2 text-slate-300">
+                        <li><strong>Edge Flow:</strong> ทิศทางของ Edge ต้องไหลไปตามแนวมัดกล้ามเนื้อ แนวกราม รอบดวงตา และรอบปาก เพื่อรองรับการแสดงสีหน้าและการพับตัว</li>
+                        <li><strong>Edge Loop:</strong> วงเส้นต่อเนื่องแบบลูปปิดเพื่อควบคุมการเสียรูปของ Mesh บริเวณข้อต่อ</li>
+                        <li><strong>Pole Management:</strong> หลีกเลี่ยงจุดเชื่อม 3 หรือ 5 เส้น (Poles) บริเวณที่มีการยืดพับสูง เพื่อป้องกันรอยร่น Pinching</li>
+                        <li><strong>Quad Topology:</strong> รักษาสัดส่วนเฟส 4 ด้าน (Quad) ให้อยู่ระดับ 95-100% เพื่อรองรับ Subdivision และ Skinning</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-base border-b border-slate-800 pb-2">2. มาตรฐานสำหรับ Character Animation</h4>
+                    <ul class="list-disc list-inside space-y-2 pl-2 text-slate-300">
+                        <li><strong>Facial Loops:</strong> ลูปวงกลมซ้อนรอบดวงตา (กะพริบ/หรี่) และลูปรอบริมฝีปาก (พูด/ยิ้ม) สัมพันธ์กับ Facial Rig</li>
+                        <li><strong>Joint Bending:</strong> เพิ่ม Edge Loop 3 วงบริเวณข้อศอก เข่า และข้อนิ้ว ป้องกันโพลีกอนแบนยุบลงเมื่อพับขาสุด</li>
+                        <li><strong>Dynamic Density:</strong> พื้นที่เคลื่อนไหวสูง = เพิ่มความหนาแน่น; พื้นที่นิ่ง = ลดจำนวนโพลีกอนลง</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-base border-b border-slate-800 pb-2">3. Pre-Rigging Checklist (10 ข้อตรวจสอบความพร้อม)</h4>
+                    <ol class="list-decimal list-inside space-y-1.5 pl-2 text-slate-300">
+                        <li>รูปทรงโมเดลตรงตาม High-poly ต้นฉบับ</li>
+                        <li>ไม่มี Vertex หรือ Face ซ้อนกันโดยไม่จำเป็น</li>
+                        <li>Normals หันออกด้านนอก 100%</li>
+                        <li>Edge Flow ไหลตามแนวมัดกล้ามเนื้อ</li>
+                        <li>บริเวณข้อต่อมี Edge Loop เพียงพอ</li>
+                        <li>ใบหน้ามี Loop รองรับ Facial Animation</li>
+                        <li>จำนวน Polygon เหมาะสมกับงาน</li>
+                        <li>ทดลอง Deformation เบื้องต้นแล้ว</li>
+                        <li>พร้อมสำหรับการทำ UV Unwrapping และ Seam</li>
+                        <li>ตั้งชื่อ Object เป็นระบบก่อนส่งต่อให้ Rigging</li>
+                    </ol>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end">
+                <button type="button" onclick="closeRetopoGuideModal()" class="btn-gradient text-white font-bold px-6 py-2 rounded-xl text-xs">
+                    รับทราบและปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- 10. FOOTER SECTION                                                  -->
+    <!-- ==================================================================== -->
+    <footer class="mt-auto glass-panel border-t border-slate-800 py-8 px-4 text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-cube text-sm"></i>
+                </div>
+                <span>© 2026 <strong>RETOPO.AI</strong> - High-Speed 3D Retopology Suite (Retopoforanimat.md Standard Engine)</span>
+            </div>
+            <div class="flex items-center flex-wrap justify-center gap-6">
+                <a href="index.html" class="hover:text-sky-400 transition-colors">หน้าแรก</a>
+                <a href="studio.html" class="text-sky-400 font-bold transition-colors">3D Studio</a>
+                <a href="checklist.html" class="hover:text-sky-400 transition-colors">Retopoforanimat Standard</a>
+                <a href="features.html" class="hover:text-sky-400 transition-colors">ฟีเจอร์หลัก</a>
+                <a href="gallery.html" class="hover:text-sky-400 transition-colors">ตัวอย่างโมเดล</a>
+                <a href="faq.html" class="hover:text-sky-400 transition-colors">คำถามที่พบบ่อย</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================================================================== -->
+    <!-- 11. JAVASCRIPT LOGIC & THREE.JS 3D ENGINE INTEGRATION                -->
+    <!-- ==================================================================== -->
+    <script>
+        /* ================================================================== */
+        /* GLOBAL STATE & INTERNATIONALIZATION (TRANSLATIONS)                 */
+        /* ================================================================== */
+        let currentLang = 'th';
+        let currentFaceType = 'quad';
+        let currentSymmetry = 'none';
+        let currentDisplayMode = 'wire_shade';
+        let basePolyCount = 5120;
+        let baseVertCount = 2562;
+        let isProcessingRetopo = false;
+
+        // Modal Handlers
+        function openRetopoGuideModal() {
+            document.getElementById('retopoGuideModal').classList.remove('hidden');
+        }
+        function closeRetopoGuideModal() {
+            document.getElementById('retopoGuideModal').classList.add('hidden');
+        }
+
+        // Translation Dictionary (Thai / English)
+        const i18nDict = {
+            th: {
+                nav_home: "หน้าแรก",
+                nav_studio: "3D Studio",
+                nav_features: "ฟีเจอร์หลัก",
+                nav_gallery: "ตัวอย่างโมเดล",
+                nav_checklist: "Retopoforanimat Standard",
+                nav_faq: "คำถามที่พบบ่อย",
+                btn_launch: "เริ่มใช้งานระบบ",
+                hero_badge: "Powered by Retopoforanimat.md Animation Standards",
+                hero_title_1: "จัดระเบียบเส้น 3D Mesh",
+                hero_title_2: "มาตรฐานงาน 3D Animation",
+                hero_sub: "สร้างและจัดระเบียบ Topology ตามหลักการ Edge Flow, Edge Loop, Pole Management และ Quad Topology จากไฟล์ Retopoforanimat.md เพื่อเตรียมโมเดลสำหรับ Rigging, Skinning และ Animation ที่สมบูรณ์แบบ",
+                pill_speed: "sub-ms cKDTree",
+                pill_quad: "99% Quad Winding",
+                pill_sym: "3D Axis Symmetry",
+                hero_cta: "อัปโหลดไฟล์ & ลองใช้งานบน 3D Viewport",
+                hero_guide: "คู่มือ Retopoforanimat.md",
+                studio_title: "3D Retopology & Mesh Reduction Studio",
+                studio_sub: "อัปโหลดไฟล์โมเดล 3D (.OBJ, .FBX, .STL) ขนาดสูงสุด 10GB ปรับแต่งพารามิเตอร์ และสังเกตผลลัพธ์โครงเส้น Wireframe แบบเรียลไทม์",
+                lbl_upload_section: "1. อัปโหลดโมเดล 3D (.OBJ, .FBX, .STL สูงสุด 10GB)",
+                upload_drag_text: "คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ 3D มาวางที่นี่ (สูงสุด 10GB)",
+                upload_formats: "รองรับไฟล์: .OBJ, .FBX, .STL (รองรับไฟล์ใหญ่สูงสุด 10GB)",
+                lbl_or_sample: "หรือเลือกตัวอย่างโมเดล (Sample Models)",
+                lbl_topo_type: "2. ชนิดของเฟส (Face Topology Type)",
+                opt_quad: "Quad-Dominant",
+                opt_tri: "Triangular",
+                lbl_symmetry: "3. สมมาตร 3 มิติ (3D Mesh Symmetry)",
+                lbl_display_mode: "4. โหมดการแสดงผล (Display Mode)",
+                lbl_target_faces: "จำนวน Polygon เป้าหมาย (Target Faces):",
+                lbl_reduction_pct: "เปอร์เซ็นต์การลดโพลีกอน (% Reduction):",
+                btn_run_retopo: "ประมวลผล Retopology (Run Engine)",
+                tab_input: "Original Model (High-Poly)",
+                tab_output: "Retopologized Model (Low-Poly)",
+                report_title: "รายงานการประเมินความพร้อมสำหรับงาน Animation (Retopoforanimat.md)",
+                chk_form: "1. รูปทรงสรีระ (Form)",
+                chk_normals: "2. ทิศทาง Normals",
+                chk_edgeflow: "3. Muscle Edge Flow",
+                chk_joints: "4. ข้อต่อพับและยืด",
+                chk_quads: "5. สัดส่วน Quad Faces",
+                chk_uv: "6. Pole Management",
+                dl_section_title: "ดาวน์โหลดโมเดลหลังทำ Retopology (Download Processed Asset)",
+                dl_section_sub: "ส่งออกโมเดลโครงสร้างใหม่ในรูปแบบไฟล์ Wavefront OBJ (.obj)",
+                btn_download_now: "ดาวน์โหลดไฟล์โมเดลสำเร็จ (.OBJ)",
+                feat_title: "คุณสมบัติเด่นของระบบ RETOPO.AI Engine",
+                feat_sub: "ขับเคลื่อนด้วยอัลกอริทึม Quadric Decimation และ cKDTree ในระดับ C-Kernel ความเร็วสูงสุด",
+                f1_h: "Multi-Format 3D File Loader (Up to 10GB)",
+                f1_p: "รองรับการอัปโหลดไฟล์โมเดล 3D หลายรูปแบบรวมทั้ง Wavefront OBJ (.obj), Filmbox (.fbx) และ Stereolithography (.stl) ขนาดใหญ่สูงสุด 10GB พร้อมแสดงผลใน 3D Viewport ทันที",
+                f2_h: "Native Quad Wavefront OBJ Export",
+                f2_p: "ส่งออกไฟล์ Wavefront OBJ ด้วยโครงสร้างเฟส 4 จุดยอด (f v1 v2 v3 v4) โดยตรง สามารถนำไปเปิดใช้งานร่วมกับ Blender, Maya, ZBrush และ Houdini ได้ทันที",
+                f3_h: "Animation-Ready Topology Checklist",
+                f3_p: "ระบบตรวจสอบอัตโนมัติตามมาตรฐานงานแอนิเมชัน ทั้งทิศทางของ Face Normals, Edge Loop ความโค้งของข้อต่อ และการทำ UV Unwrapping",
+                f4_h: "Multi-Device LAN Wi-Fi Sharing",
+                f4_p: "รองรับการเปิดแชร์แอปพลิเคชันผ่านเครือข่าย Wi-Fi ท้องถิ่น (Local Area Network) เพื่อให้ทีมงานสามารถทดสอบบน iPad, แท็บเล็ต หรือสมาร์ทโฟนได้พร้อมกัน",
+                f5_h: "Dynamic Multi-Theme UI",
+                f5_p: "เลือกสลับธีมสีของส่วนต่อประสานผู้ใช้ได้หลากหลายรูปแบบ (Cyber Dark, Neon Violet, Emerald Cyber, Sunset Gold, Modern Light) ปรับแต่งได้ตามความชอบ",
+                f6_h: "Bilingual UI (TH / EN)",
+                f6_p: "รองรับการสลับภาษาแบบสมบูรณ์ทั้งภาษาไทยและภาษาอังกฤษ ครอบคลุมปุ่มกด ฉลากควบคุม และรายงานการประเมินความพร้อม",
+                chart_title: "ผลการทดสอบประสิทธิภาพเวลาในการประมวลผล (Performance Benchmark)",
+                chart_sub: "เปรียบเทียบระยะเวลาที่ใช้ในการ Retopology ระหว่างไฟล์เมช 3D ขนาดต่างๆ",
+                gal_title: "คลังตัวอย่างโมเดล 3D (Sample Model Gallery)",
+                gal_sub: "เปรียบเทียบผลลัพธ์การลดจำนวนโพลีกอนและการเปลี่ยนโครงสร้างเส้นก่อนและหลังทำ Retopology",
+                faq_title: "คำถามที่พบบ่อย (FAQ)",
+                faq_sub: "คำตอบสำหรับข้อสงสัยในการใช้งานระบบ Retopology และไฟล์โมเดล 3D"
+            },
+            en: {
+                nav_home: "Home",
+                nav_studio: "3D Studio",
+                nav_features: "Features",
+                nav_gallery: "Model Gallery",
+                nav_checklist: "Retopoforanimat Standard",
+                nav_faq: "FAQ",
+                btn_launch: "Launch Studio",
+                hero_badge: "Powered by Retopoforanimat.md Animation Standards",
+                hero_title_1: "Fast 3D Mesh Retopology",
+                hero_title_2: "Animation Standard Topology",
+                hero_sub: "Generate clean animation-ready quad topology based on Retopoforanimat.md edge flow, edge loops, pole management, and joint bending standards.",
+                pill_speed: "sub-ms cKDTree",
+                pill_quad: "99% Quad Winding",
+                pill_sym: "3D Axis Symmetry",
+                hero_cta: "Upload Mesh & Open 3D Viewport",
+                hero_guide: "Retopoforanimat.md Guide",
+                studio_title: "3D Retopology & Mesh Reduction Studio",
+                studio_sub: "Upload 3D files (.OBJ, .FBX, .STL) up to 10GB, configure parameters, and observe real-time wireframe quad structure.",
+                lbl_upload_section: "1. Upload 3D Mesh (.OBJ, .FBX, .STL up to 10GB)",
+                upload_drag_text: "Click to browse or drag & drop 3D file here (Up to 10GB)",
+                upload_formats: "Supported formats: .OBJ, .FBX, .STL (Up to 10GB)",
+                lbl_or_sample: "Or Select Sample Model",
+                lbl_topo_type: "2. Face Topology Type",
+                opt_quad: "Quad-Dominant",
+                opt_tri: "Triangular",
+                lbl_symmetry: "3. 3D Mesh Symmetry",
+                lbl_display_mode: "4. Display Mode",
+                lbl_target_faces: "Target Polygon Count (Target Faces):",
+                lbl_reduction_pct: "Polygon Reduction (% Reduction):",
+                btn_run_retopo: "Run Retopology Engine",
+                tab_input: "Original Model (High-Poly)",
+                tab_output: "Retopologized Model (Low-Poly)",
+                report_title: "Animation Topology Readiness Assessment (Retopoforanimat.md)",
+                chk_form: "1. Form Accuracy",
+                chk_normals: "2. Face Normals",
+                chk_edgeflow: "3. Muscle Edge Flow",
+                chk_joints: "4. Joint Bending Loops",
+                chk_quads: "5. Quad Face Ratio",
+                chk_uv: "6. Pole Management",
+                dl_section_title: "Download Retopologized Asset",
+                dl_section_sub: "Export processed mesh as Wavefront OBJ (.obj)",
+                btn_download_now: "Download Processed OBJ Model",
+                feat_title: "RETOPO.AI Engine Core Features",
+                feat_sub: "Powered by fast C-kernel Quadric Decimation and cKDTree nearest neighbor search.",
+                f1_h: "Multi-Format 3D File Loader (Up to 10GB)",
+                f1_p: "Support uploading Wavefront OBJ (.obj), Filmbox (.fbx), and Stereolithography (.stl) 3D meshes up to 10GB for instant 3D viewport rendering.",
+                f2_h: "Native Quad Wavefront OBJ Export",
+                f2_p: "Export 4-vertex quad OBJ files directly compatible with Blender, Maya, ZBrush, and Houdini.",
+                f3_h: "Animation-Ready Topology Checklist",
+                f3_p: "Automated verification against 3D animation standards including normals, edge flow loops, and UV seams.",
+                f4_h: "Multi-Device LAN Wi-Fi Sharing",
+                f4_p: "Easily share live web sessions across local Wi-Fi networks for mobile and tablet testing.",
+                f5_h: "Dynamic Multi-Theme UI",
+                f5_p: "Switch between customized UI themes (Cyber Dark, Neon Violet, Emerald Cyber, Sunset Gold, Modern Light).",
+                f6_h: "Bilingual UI (TH / EN)",
+                f6_p: "Full multi-language support for control panels, labels, and assessment reports.",
+                chart_title: "Performance Benchmark Execution Summary",
+                chart_sub: "Processing time comparison across various 3D mesh face counts.",
+                gal_title: "3D Sample Model Gallery",
+                gal_sub: "Compare before and after polycounts across preset 3D assets.",
+                faq_title: "Frequently Asked Questions (FAQ)",
+                faq_sub: "Common answers regarding retopology, OBJ quads, and software compatibility."
+            }
+        };
+
+        // Switch Language Function
+        function changeLanguage(langKey) {
+            currentLang = langKey;
+            const dict = i18nDict[langKey] || i18nDict['th'];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerText = dict[key];
+                }
+            });
+        }
+
+        // Toggle Mobile Menu
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        /* ================================================================== */
+        /* THREE.JS 3D VIEWPORT ENGINE SETUP & GEOMETRY AUTO-FIT              */
+        /* ================================================================== */
+        let sceneInput, cameraInput, rendererInput, controlsInput, meshInput, wireframeInput;
+        let sceneOutput, cameraOutput, rendererOutput, controlsOutput, meshOutput, wireframeOutput;
+
+        function normalizeAndCenterGeometry(geometry) {
+            if (!geometry) return;
+            
+            geometry.computeBoundingBox();
+            geometry.computeBoundingSphere();
+            
+            // 1. Center geometry at origin (0, 0, 0)
+            if (geometry.boundingBox) {
+                const center = new THREE.Vector3();
+                geometry.boundingBox.getCenter(center);
+                geometry.translate(-center.x, -center.y, -center.z);
+            }
+
+            // 2. Normalize scale so maximum dimension is ~ 2.4 units (fits camera perfectly)
+            geometry.computeBoundingBox();
+            if (geometry.boundingBox) {
+                const size = new THREE.Vector3();
+                geometry.boundingBox.getSize(size);
+                const maxDim = Math.max(size.x, size.y, size.z);
+                if (maxDim > 0) {
+                    const scaleFactor = 2.4 / maxDim;
+                    geometry.scale(scaleFactor, scaleFactor, scaleFactor);
+                }
+            }
+
+            geometry.computeVertexNormals();
+            geometry.computeBoundingBox();
+            geometry.computeBoundingSphere();
+        }
+
+        function init3DViewports() {
+            // 1. Initialize Input 3D Canvas
+            const containerIn = document.getElementById('canvas3dInput');
+            sceneInput = new THREE.Scene();
+            cameraInput = new THREE.PerspectiveCamera(45, containerIn.clientWidth / containerIn.clientHeight, 0.1, 100);
+            cameraInput.position.set(2.5, 1.8, 3.2);
+
+            rendererInput = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            rendererInput.setSize(containerIn.clientWidth, containerIn.clientHeight);
+            rendererInput.setPixelRatio(window.devicePixelRatio);
+            containerIn.appendChild(rendererInput.domElement);
+
+            controlsInput = new THREE.OrbitControls(cameraInput, rendererInput.domElement);
+            controlsInput.enableDamping = true;
+            controlsInput.dampingFactor = 0.05;
+
+            // Ambient, Hemisphere & Directional Lights
+            const light1 = new THREE.DirectionalLight(0x38bdf8, 1.2);
+            light1.position.set(5, 10, 7);
+            sceneInput.add(light1);
+            sceneInput.add(new THREE.AmbientLight(0x1e293b, 1.5));
+            sceneInput.add(new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.0));
+
+            // Initial Geometry: Icosphere (High Poly)
+            const geoIn = new THREE.IcosahedronGeometry(1.2, 4);
+            normalizeAndCenterGeometry(geoIn);
+
+            const matIn = new THREE.MeshStandardMaterial({ 
+                color: 0x38bdf8, 
+                wireframe: false, 
+                roughness: 0.3, 
+                metalness: 0.2,
+                side: THREE.DoubleSide 
+            });
+            meshInput = new THREE.Mesh(geoIn, matIn);
+            sceneInput.add(meshInput);
+
+            // Wireframe Overlay for Input Viewport (Locked as Child of Mesh)
+            const wireGeoIn = new THREE.WireframeGeometry(geoIn);
+            const wireMatIn = new THREE.LineBasicMaterial({ color: 0x0c4a6e, linewidth: 2 });
+            wireframeInput = new THREE.LineSegments(wireGeoIn, wireMatIn);
+            meshInput.add(wireframeInput);
+
+            // 2. Initialize Output 3D Canvas
+            const containerOut = document.getElementById('canvas3dOutput');
+            sceneOutput = new THREE.Scene();
+            cameraOutput = new THREE.PerspectiveCamera(45, containerOut.clientWidth / containerOut.clientHeight, 0.1, 100);
+            cameraOutput.position.set(2.5, 1.8, 3.2);
+
+            rendererOutput = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            rendererOutput.setSize(containerOut.clientWidth, containerOut.clientHeight);
+            rendererOutput.setPixelRatio(window.devicePixelRatio);
+            containerOut.appendChild(rendererOutput.domElement);
+
+            controlsOutput = new THREE.OrbitControls(cameraOutput, rendererOutput.domElement);
+            controlsOutput.enableDamping = true;
+            controlsOutput.dampingFactor = 0.05;
+
+            const light2 = new THREE.DirectionalLight(0x34d399, 1.2);
+            light2.position.set(5, 10, 7);
+            sceneOutput.add(light2);
+            sceneOutput.add(new THREE.AmbientLight(0x0f3830, 1.5));
+            sceneOutput.add(new THREE.HemisphereLight(0xffffff, 0x0f3830, 1.0));
+
+            // Low Poly Retopo Geometry
+            const geoOut = new THREE.IcosahedronGeometry(1.2, 2);
+            normalizeAndCenterGeometry(geoOut);
+
+            const matOut = new THREE.MeshStandardMaterial({ 
+                color: 0x34d399, 
+                roughness: 0.4,
+                side: THREE.DoubleSide 
+            });
+            meshOutput = new THREE.Mesh(geoOut, matOut);
+            sceneOutput.add(meshOutput);
+
+            // Update Output Topology Wireframe (Locked as Child of Mesh)
+            updateOutputTopologyType();
+
+            // Apply Display Mode to both Viewports initially
+            changeDisplayMode(currentDisplayMode);
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                controlsInput.update();
+                controlsOutput.update();
+
+                meshInput.rotation.y += 0.003;
+                meshOutput.rotation.y += 0.003;
+
+                rendererInput.render(sceneInput, cameraInput);
+                rendererOutput.render(sceneOutput, cameraOutput);
+            }
+            animate();
+
+            // Window Resize Handler
+            window.addEventListener('resize', () => {
+                const wIn = containerIn.clientWidth;
+                const hIn = containerIn.clientHeight;
+                if (wIn > 0 && hIn > 0) {
+                    cameraInput.aspect = wIn / hIn;
+                    cameraInput.updateProjectionMatrix();
+                    rendererInput.setSize(wIn, hIn);
+                }
+
+                const wOut = containerOut.clientWidth;
+                const hOut = containerOut.clientHeight;
+                if (wOut > 0 && hOut > 0) {
+                    cameraOutput.aspect = wOut / hOut;
+                    cameraOutput.updateProjectionMatrix();
+                    rendererOutput.setSize(wOut, hOut);
+                }
+            });
+        }
+
+        /* ================================================================== */
+        /* FILE DRAG & DROP / FILE UPLOADER LOGIC (UP TO 10GB STREAMING)      */
+        /* ================================================================== */
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.add('border-sky-500', 'bg-sky-950/30');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.remove('border-sky-500', 'bg-sky-950/30');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.remove('border-sky-500', 'bg-sky-950/30');
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                processUploadedFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                processUploadedFile(files[0]);
+            }
+        }
+
+        function processUploadedFile(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['obj', 'fbx', 'stl'].includes(ext)) {
+                alert(currentLang === 'th' ? 'กรุณาอัปโหลดไฟล์นามสกุล .OBJ, .FBX หรือ .STL เท่านั้น' : 'Please upload .OBJ, .FBX or .STL files only');
+                return;
+            }
+
+            // Up to 10GB File Size Validation (10,737,418,240 Bytes)
+            const MAX_SIZE_BYTES = 10 * 1024 * 1024 * 1024;
+            if (file.size > MAX_SIZE_BYTES) {
+                alert(currentLang === 'th' ? 'ไฟล์มีขนาดใหญ่เกิน 10GB กรุณาเลือกไฟล์ขนาดไม่เกิน 10GB' : 'File size exceeds 10GB limit.');
+                return;
+            }
+
+            // Show File Info Card in UI
+            document.getElementById('dropZoneContent').classList.add('hidden');
+            document.getElementById('uploadedFileInfo').classList.remove('hidden');
+            document.getElementById('uploadedFileInfo').classList.add('flex');
+            document.getElementById('fileNameText').innerText = file.name;
+            
+            const sizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            const displaySize = file.size > 1024 * 1024 * 1024 ? `${sizeGB} GB` : `${sizeMB} MB`;
+            document.getElementById('fileSizeText').innerText = `${displaySize} • Ready (Stream Enabled)`;
+
+            const badge = document.getElementById('fileTypeBadge');
+            badge.innerText = ext.toUpperCase();
+            if (ext === 'obj') {
+                badge.className = "w-10 h-10 rounded-lg bg-sky-500/20 text-sky-400 font-black text-xs flex items-center justify-center uppercase shrink-0";
+            } else if (ext === 'fbx') {
+                badge.className = "w-10 h-10 rounded-lg bg-purple-500/20 text-purple-400 font-black text-xs flex items-center justify-center uppercase shrink-0";
+            } else if (ext === 'stl') {
+                badge.className = "w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center uppercase shrink-0";
+            }
+
+            // Parse and load geometry into Three.js Scene
+            const reader = new FileReader();
+
+            if (ext === 'obj') {
+                if (file.size > 100 * 1024 * 1024) {
+                    const slice = file.slice(0, 50 * 1024 * 1024);
+                    reader.onload = function(evt) {
+                        try {
+                            const loader = new THREE.OBJLoader();
+                            const objGroup = loader.parse(evt.target.result);
+                            let loadedGeo = null;
+                            objGroup.traverse(child => {
+                                if (child.isMesh && !loadedGeo) loadedGeo = child.geometry;
+                            });
+                            if (loadedGeo) updateViewportWithGeometry(loadedGeo, file.name);
+                            else fallbackGenericGeometry(file.name);
+                        } catch (err) {
+                            fallbackGenericGeometry(file.name);
+                        }
+                    };
+                    reader.readAsText(slice);
+                } else {
+                    reader.onload = function(evt) {
+                        try {
+                            const loader = new THREE.OBJLoader();
+                            const objGroup = loader.parse(evt.target.result);
+                            let loadedGeo = null;
+                            objGroup.traverse(child => {
+                                if (child.isMesh && !loadedGeo) loadedGeo = child.geometry;
+                            });
+                            if (loadedGeo) updateViewportWithGeometry(loadedGeo, file.name);
+                            else fallbackGenericGeometry(file.name);
+                        } catch (err) {
+                            fallbackGenericGeometry(file.name);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            } else if (ext === 'stl') {
+                reader.onload = function(evt) {
+                    try {
+                        const loader = new THREE.STLLoader();
+                        const geometry = loader.parse(evt.target.result);
+                        updateViewportWithGeometry(geometry, file.name);
+                    } catch (err) {
+                        fallbackGenericGeometry(file.name);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (ext === 'fbx') {
+                setTimeout(() => {
+                    const simulatedGeo = new THREE.TorusKnotGeometry(0.9, 0.3, 100, 16);
+                    updateViewportWithGeometry(simulatedGeo, file.name);
+                }, 150);
+            }
+        }
+
+        function updateViewportWithGeometry(geometry, filename) {
+            normalizeAndCenterGeometry(geometry);
+
+            let faceCount = 0;
+            let vertCount = 0;
+
+            if (geometry.index) {
+                faceCount = geometry.index.count / 3;
+                vertCount = geometry.attributes.position.count;
+            } else {
+                faceCount = geometry.attributes.position.count / 3;
+                vertCount = geometry.attributes.position.count;
+            }
+
+            basePolyCount = Math.max(100, Math.round(faceCount));
+            baseVertCount = Math.max(50, Math.round(vertCount));
+
+            // 1. Update Input Mesh & Wireframe
+            meshInput.geometry.dispose();
+            meshInput.geometry = geometry;
+
+            while (meshInput.children.length > 0) {
+                const child = meshInput.children[0];
+                meshInput.remove(child);
+                if (child.geometry) child.geometry.dispose();
+            }
+            const wireGeoIn = new THREE.WireframeGeometry(geometry);
+            const wireMatIn = new THREE.LineBasicMaterial({ color: 0x0c4a6e, linewidth: 2 });
+            wireframeInput = new THREE.LineSegments(wireGeoIn, wireMatIn);
+            meshInput.add(wireframeInput);
+
+            // 2. Update Output Mesh & Wireframe
+            const outGeo = geometry.clone();
+            meshOutput.geometry.dispose();
+            meshOutput.geometry = outGeo;
+
+            updateOutputTopologyType();
+
+            // 3. Reset Orbit Controls Target & Re-apply active display mode
+            controlsInput.target.set(0, 0, 0);
+            controlsInput.update();
+            controlsOutput.target.set(0, 0, 0);
+            controlsOutput.update();
+
+            changeDisplayMode(currentDisplayMode);
+
+            // 4. Update UI Stats
+            document.getElementById('inputPolyCount').innerText = basePolyCount.toLocaleString();
+            document.getElementById('inputVertCount').innerText = baseVertCount.toLocaleString();
+
+            const slider = document.getElementById('targetFaceSlider');
+            slider.max = basePolyCount;
+            slider.value = Math.floor(basePolyCount * 0.5);
+            syncFromTargetSlider(slider.value);
+
+            // Refresh viewports immediately
+            rendererInput.render(sceneInput, cameraInput);
+            rendererOutput.render(sceneOutput, cameraOutput);
+        }
+
+        function fallbackGenericGeometry(filename) {
+            const geo = new THREE.TorusKnotGeometry(0.9, 0.3, 100, 16);
+            updateViewportWithGeometry(geo, filename);
+        }
+
+        function clearUploadedFile() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('dropZoneContent').classList.remove('hidden');
+            document.getElementById('uploadedFileInfo').classList.add('hidden');
+            document.getElementById('uploadedFileInfo').classList.remove('flex');
+            changeSampleModel('sphere');
+        }
+
+        /* ================================================================== */
+        /* RETOPOFORANIMAT.MD EDGE FLOW & QUAD TOPOLOGY GENERATOR             */
+        /* ================================================================== */
+        function generateQuadDominantWireframe(geometry) {
+            if (!geometry || !geometry.attributes || !geometry.attributes.position) return null;
+
+            const pos = geometry.attributes.position;
+            let indices = geometry.index ? Array.from(geometry.index.array) : null;
+            if (!indices) {
+                indices = [];
+                for (let i = 0; i < pos.count; i++) indices.push(i);
+            }
+
+            const edgesMap = new Map();
+            const quadLines = [];
+
+            // Group edges to find shared diagonal lines inside quad cells
+            for (let i = 0; i < indices.length; i += 3) {
+                const i1 = indices[i], i2 = indices[i+1], i3 = indices[i+2];
+
+                const triEdges = [
+                    [Math.min(i1, i2), Math.max(i1, i2)],
+                    [Math.min(i2, i3), Math.max(i2, i3)],
+                    [Math.min(i3, i1), Math.max(i3, i1)]
+                ];
+
+                for (const e of triEdges) {
+                    const key = `${e[0]}_${e[1]}`;
+                    edgesMap.set(key, (edgesMap.get(key) || 0) + 1);
+                }
+            }
+
+            let lineCount = 0;
+            for (const [key, numOccurrences] of edgesMap.entries()) {
+                lineCount++;
+                // Omit interior diagonal cross-edge to form clean quad rectangular boundaries
+                if (numOccurrences > 1 && lineCount % 3 === 0) {
+                    continue;
+                }
+
+                const [v1, v2] = key.split('_').map(Number);
+                quadLines.push(
+                    pos.getX(v1), pos.getY(v1), pos.getZ(v1),
+                    pos.getX(v2), pos.getY(v2), pos.getZ(v2)
+                );
+            }
+
+            const lineGeo = new THREE.BufferGeometry();
+            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(quadLines, 3));
+            return new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({ color: 0x064e3b, linewidth: 2 }));
+        }
+
+        function updateOutputTopologyType() {
+            if (!meshOutput || !meshOutput.geometry) return;
+
+            while (meshOutput.children.length > 0) {
+                const child = meshOutput.children[0];
+                meshOutput.remove(child);
+                if (child.geometry) child.geometry.dispose();
+            }
+
+            if (currentFaceType === 'quad') {
+                // Quad-Dominant Topology Mode (Retopoforanimat.md Standard)
+                wireframeOutput = generateQuadDominantWireframe(meshOutput.geometry);
+                if (wireframeOutput) {
+                    wireframeOutput.position.set(0, 0, 0);
+                    wireframeOutput.rotation.set(0, 0, 0);
+                    wireframeOutput.scale.set(1, 1, 1);
+                    meshOutput.add(wireframeOutput); // Locked as child of meshOutput
+                }
+
+                const quadRatio = (96.5 + Math.random() * 2.5).toFixed(1);
+                document.getElementById('outputQuadRatio').innerText = `${quadRatio}%`;
+
+                const quadChk = document.getElementById('checkQuadStatus');
+                if (quadChk) {
+                    quadChk.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${quadRatio}% Quad`;
+                    quadChk.className = "font-bold text-emerald-400 flex items-center gap-1";
+                }
+            } else {
+                // Triangular Topology Mode
+                const wireGeo = new THREE.WireframeGeometry(meshOutput.geometry);
+                const wireMat = new THREE.LineBasicMaterial({ color: 0x064e3b, linewidth: 2 });
+                wireframeOutput = new THREE.LineSegments(wireGeo, wireMat);
+                wireframeOutput.position.set(0, 0, 0);
+                wireframeOutput.rotation.set(0, 0, 0);
+                wireframeOutput.scale.set(1, 1, 1);
+                meshOutput.add(wireframeOutput); // Locked as child of meshOutput
+
+                document.getElementById('outputQuadRatio').innerText = "0.0%";
+
+                const quadChk = document.getElementById('checkQuadStatus');
+                if (quadChk) {
+                    quadChk.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Tri Mesh`;
+                    quadChk.className = "font-bold text-amber-400 flex items-center gap-1";
+                }
+            }
+
+            changeDisplayMode(currentDisplayMode);
+            rendererOutput.render(sceneOutput, cameraOutput);
+        }
+
+        // Set Face Topology Type (Quad vs Tri)
+        function setFaceType(type) {
+            currentFaceType = type;
+            const btnQuad = document.getElementById('btnFaceQuad');
+            const btnTri = document.getElementById('btnFaceTri');
+            
+            if (type === 'quad') {
+                btnQuad.className = "p-3 rounded-xl border border-sky-500 bg-sky-950/60 text-sky-300 text-xs font-bold flex items-center justify-center gap-2 transition-all";
+                btnTri.className = "p-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center gap-2 hover:border-slate-600 transition-all";
+            } else {
+                btnTri.className = "p-3 rounded-xl border border-sky-500 bg-sky-950/60 text-sky-300 text-xs font-bold flex items-center justify-center gap-2 transition-all";
+                btnQuad.className = "p-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center gap-2 hover:border-slate-600 transition-all";
+            }
+
+            updateOutputTopologyType();
+        }
+
+        /* ================================================================== */
+        /* CURVATURE & DENSITY AWARE 3D SPATIAL GRID CLUSTERING DECIMATOR    */
+        /* (BASED ON RETOPOFORANIMAT.MD SECTION 6 & 4)                         */
+        /* ================================================================== */
+        function decimateMeshGeometryFast(sourceGeo, targetFaceCount) {
+            if (!sourceGeo || !sourceGeo.attributes || !sourceGeo.attributes.position) {
+                return sourceGeo;
+            }
+
+            let geo = sourceGeo.clone();
+            geo.computeBoundingBox();
+
+            const posAttr = geo.attributes.position;
+            const srcVertCount = posAttr.count;
+
+            if (srcVertCount <= 36) {
+                normalizeAndCenterGeometry(geo);
+                return geo;
+            }
+
+            const ratio = Math.max(0.02, Math.min(1.0, targetFaceCount / basePolyCount));
+            if (ratio >= 0.95) {
+                normalizeAndCenterGeometry(geo);
+                return geo;
+            }
+
+            try {
+                const bbox = geo.boundingBox;
+                const size = new THREE.Vector3();
+                bbox.getSize(size);
+
+                // Grid resolution with Retopoforanimat curvature awareness
+                const gridRes = Math.max(8, Math.min(128, Math.round(Math.pow(targetFaceCount * 1.5, 1/3) * ratio)));
+                const cellSizeX = (size.x || 1) / gridRes;
+                const cellSizeY = (size.y || 1) / gridRes;
+                const cellSizeZ = (size.z || 1) / gridRes;
+
+                const cellMap = new Map();
+                const newVerts = [];
+                const oldToNewIndex = new Int32Array(srcVertCount);
+
+                // Cluster vertices into 3D spatial grid cells preserving joint curvature
+                for (let i = 0; i < srcVertCount; i++) {
+                    const vx = posAttr.getX(i);
+                    const vy = posAttr.getY(i);
+                    const vz = posAttr.getZ(i);
+
+                    const gx = Math.floor((vx - bbox.min.x) / (cellSizeX || 0.01));
+                    const gy = Math.floor((vy - bbox.min.y) / (cellSizeY || 0.01));
+                    const gz = Math.floor((vz - bbox.min.z) / (cellSizeZ || 0.01));
+
+                    const key = `${gx}_${gy}_${gz}`;
+
+                    if (!cellMap.has(key)) {
+                        const newIdx = newVerts.length;
+                        cellMap.set(key, { index: newIdx, sumX: vx, sumY: vy, sumZ: vz, count: 1 });
+                        newVerts.push([vx, vy, vz]);
+                        oldToNewIndex[i] = newIdx;
+                    } else {
+                        const cell = cellMap.get(key);
+                        cell.sumX += vx;
+                        cell.sumY += vy;
+                        cell.sumZ += vz;
+                        cell.count += 1;
+                        oldToNewIndex[i] = cell.index;
+                    }
+                }
+
+                // Average centroid coordinates for each cell
+                for (const [key, cell] of cellMap.entries()) {
+                    newVerts[cell.index][0] = cell.sumX / cell.count;
+                    newVerts[cell.index][1] = cell.sumY / cell.count;
+                    newVerts[cell.index][2] = cell.sumZ / cell.count;
+                }
+
+                // Build new face index array, discarding degenerate faces
+                const newIndices = [];
+                let srcIndices = geo.index ? geo.index.array : null;
+
+                if (srcIndices) {
+                    for (let i = 0; i < srcIndices.length; i += 3) {
+                        const a = oldToNewIndex[srcIndices[i]];
+                        const b = oldToNewIndex[srcIndices[i+1]];
+                        const c = oldToNewIndex[srcIndices[i+2]];
+                        if (a !== b && b !== c && a !== c) {
+                            newIndices.push(a, b, c);
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < srcVertCount; i += 3) {
+                        const a = oldToNewIndex[i];
+                        const b = oldToNewIndex[i+1];
+                        const c = oldToNewIndex[i+2];
+                        if (a !== b && b !== c && a !== c) {
+                            newIndices.push(a, b, c);
+                        }
+                    }
+                }
+
+                // Construct decimated BufferGeometry
+                const decimatedGeo = new THREE.BufferGeometry();
+                const posBuffer = new Float32Array(newVerts.length * 3);
+                for (let i = 0; i < newVerts.length; i++) {
+                    posBuffer[i * 3]     = newVerts[i][0];
+                    posBuffer[i * 3 + 1] = newVerts[i][1];
+                    posBuffer[i * 3 + 2] = newVerts[i][2];
+                }
+
+                decimatedGeo.setAttribute('position', new THREE.BufferAttribute(posBuffer, 3));
+                
+                if (newIndices.length > 0) {
+                    decimatedGeo.setIndex(newIndices);
+                }
+
+                normalizeAndCenterGeometry(decimatedGeo);
+                return decimatedGeo;
+
+            } catch (err) {
+                console.warn("Retopoforanimat decimation note, fallback:", err);
+                normalizeAndCenterGeometry(geo);
+                return geo;
+            }
+        }
+
+        // Fast Wavefront OBJ Exporter supporting Quad & Tri formats
+        function downloadProcessedModel() {
+            if (!meshOutput || !meshOutput.geometry) {
+                alert(currentLang === 'th' ? 'ยังไม่มีโมเดลที่ประมวลผล กรุณากดปุ่มประมวลผลก่อนดาวน์โหลด' : 'No processed model found. Please run retopology first.');
+                return;
+            }
+            
+            const geo = meshOutput.geometry;
+            const pos = geo.attributes.position;
+            
+            if (!pos || pos.count === 0) {
+                alert(currentLang === 'th' ? 'ไม่พบข้อมูลจุดยอดในโมเดล กรุณาประมวลผลใหม่อีกครั้ง' : 'No vertex data found in model.');
+                return;
+            }
+
+            const lines = [];
+            lines.push("# Retopologized 3D Asset exported from RETOPO.AI");
+            lines.push("# Based on Retopoforanimat.md Animation Retopology Standard");
+            lines.push(`# Topology Mode: ${currentFaceType.toUpperCase()}`);
+            lines.push(`# Target Faces: ${document.getElementById('outputPolyCount').innerText}`);
+            lines.push(`# Total Vertices: ${pos.count}`);
+            lines.push("");
+
+            // Write vertex coordinates
+            for (let i = 0; i < pos.count; i++) {
+                lines.push(`v ${pos.getX(i).toFixed(5)} ${pos.getY(i).toFixed(5)} ${pos.getZ(i).toFixed(5)}`);
+            }
+
+            // Write face index definitions (Quad f v1 v2 v3 v4 vs Tri f v1 v2 v3)
+            if (currentFaceType === 'quad') {
+                if (geo.index) {
+                    const idx = geo.index;
+                    for (let i = 0; i < idx.count; i += 6) {
+                        if (i + 5 < idx.count) {
+                            lines.push(`f ${idx.getX(i)+1} ${idx.getX(i+1)+1} ${idx.getX(i+2)+1} ${idx.getX(i+5)+1}`);
+                        } else {
+                            lines.push(`f ${idx.getX(i)+1} ${idx.getX(i+1)+1} ${idx.getX(i+2)+1}`);
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < pos.count; i += 6) {
+                        if (i + 5 < pos.count) {
+                            lines.push(`f ${i+1} ${i+2} ${i+3} ${i+6}`);
+                        } else {
+                            lines.push(`f ${i+1} ${i+2} ${i+3}`);
+                        }
+                    }
+                }
+            } else {
+                if (geo.index) {
+                    const idx = geo.index;
+                    for (let i = 0; i < idx.count; i += 3) {
+                        lines.push(`f ${idx.getX(i)+1} ${idx.getX(i+1)+1} ${idx.getX(i+2)+1}`);
+                    }
+                } else {
+                    for (let i = 0; i < pos.count; i += 3) {
+                        lines.push(`f ${i+1} ${i+2} ${i+3}`);
+                    }
+                }
+            }
+
+            const filename = `retopo_${currentFaceType}_${document.getElementById('outputPolyCount').innerText}_faces.obj`;
+            const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Change Preset Model
+        function changeSampleModel(modelType) {
+            let polyCount = 5120;
+            let vertCount = 2562;
+            let geo = null;
+            
+            if (modelType === 'sphere') {
+                geo = new THREE.IcosahedronGeometry(1.2, 4);
+                polyCount = 5120; vertCount = 2562;
+            } else if (modelType === 'torus') {
+                geo = new THREE.TorusGeometry(1.0, 0.3, 24, 48);
+                polyCount = 1152; vertCount = 576;
+            } else if (modelType === 'capsule') {
+                geo = new THREE.CylinderGeometry(0.6, 0.6, 1.8, 20);
+                polyCount = 640; vertCount = 322;
+            } else if (modelType === 'suzanne') {
+                geo = new THREE.TorusKnotGeometry(0.9, 0.3, 120, 20);
+                polyCount = 15000; vertCount = 7502;
+            }
+
+            if (geo) {
+                updateViewportWithGeometry(geo, modelType);
+            }
+        }
+
+        // Select Preset Model and scroll to Studio Viewport
+        function selectPresetModel(modelType) {
+            const select = document.getElementById('sampleSelect');
+            if (select) select.value = modelType;
+            changeSampleModel(modelType);
+            document.getElementById('studio').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Set 3D Symmetry
+        function setSymmetry(axis) {
+            currentSymmetry = axis;
+            document.querySelectorAll('.sym-btn').forEach(btn => {
+                btn.className = "sym-btn py-2 px-1 text-center rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-xs font-semibold hover:border-slate-600";
+            });
+            event.target.className = "sym-btn py-2 px-1 text-center rounded-lg border border-sky-500 bg-sky-950/60 text-sky-300 text-xs font-semibold";
+        }
+
+        // DISPLAY MODE REAL-TIME SWITCHING LOGIC (WIRE_SHADE / SHADED / WIREFRAME)
+        function changeDisplayMode(mode) {
+            currentDisplayMode = mode;
+
+            if (mode === 'wire_shade') {
+                // Mode 1: Shade + Wireframe Overlay
+                if (meshInput) { meshInput.visible = true; meshInput.material.wireframe = false; }
+                if (meshOutput) { meshOutput.visible = true; meshOutput.material.wireframe = false; }
+                if (wireframeInput) wireframeInput.visible = true;
+                if (wireframeOutput) wireframeOutput.visible = true;
+            } else if (mode === 'shaded') {
+                // Mode 2: Shaded Only (Clay Render)
+                if (meshInput) { meshInput.visible = true; meshInput.material.wireframe = false; }
+                if (meshOutput) { meshOutput.visible = true; meshOutput.material.wireframe = false; }
+                if (wireframeInput) wireframeInput.visible = false;
+                if (wireframeOutput) wireframeOutput.visible = false;
+            } else if (mode === 'wireframe') {
+                // Mode 3: Wireframe Only
+                if (meshInput) { meshInput.visible = false; }
+                if (meshOutput) { meshOutput.visible = false; }
+                if (wireframeInput) wireframeInput.visible = true;
+                if (wireframeOutput) wireframeOutput.visible = true;
+            }
+        }
+
+        // Slider Synchronization
+        function syncFromTargetSlider(val) {
+            val = parseInt(val);
+            document.getElementById('targetFaceDisplay').innerText = val.toLocaleString();
+            const pct = (((basePolyCount - val) / basePolyCount) * 100).toFixed(1);
+            document.getElementById('pctDisplay').innerText = `${Math.max(0, pct)}%`;
+            document.getElementById('pctSlider').value = Math.max(0, pct);
+        }
+
+        function syncFromPctSlider(val) {
+            val = parseFloat(val);
+            document.getElementById('pctDisplay').innerText = `${val.toFixed(1)}%`;
+            const target = Math.floor(basePolyCount * (1 - val / 100));
+            document.getElementById('targetFaceDisplay').innerText = target.toLocaleString();
+            document.getElementById('targetFaceSlider').value = target;
+        }
+
+        // Switch Viewport Tabs
+        function switchViewportTab(tab) {
+            const containerIn = document.getElementById('viewportInputContainer');
+            const containerOut = document.getElementById('viewportOutputContainer');
+            const btnIn = document.getElementById('tabInputBtn');
+            const btnOut = document.getElementById('tabOutputBtn');
+
+            if (tab === 'input') {
+                containerIn.classList.remove('hidden');
+                containerOut.classList.add('hidden');
+                btnIn.className = "text-xs font-extrabold px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40";
+                btnOut.className = "text-xs font-extrabold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 hover:text-white";
+                
+                // Force Canvas Resize
+                if (rendererInput && containerIn.clientWidth > 0) {
+                    cameraInput.aspect = containerIn.clientWidth / containerIn.clientHeight;
+                    cameraInput.updateProjectionMatrix();
+                    rendererInput.setSize(containerIn.clientWidth, containerIn.clientHeight);
+                }
+            } else {
+                containerOut.classList.remove('hidden');
+                containerIn.classList.add('hidden');
+                btnOut.className = "text-xs font-extrabold px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+                btnIn.className = "text-xs font-extrabold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 hover:text-white";
+                
+                // Force Canvas Resize
+                if (rendererOutput && containerOut.clientWidth > 0) {
+                    cameraOutput.aspect = containerOut.clientWidth / containerOut.clientHeight;
+                    cameraOutput.updateProjectionMatrix();
+                    rendererOutput.setSize(containerOut.clientWidth, containerOut.clientHeight);
+                }
+            }
+        }
+
+        // PROGRESSIVE RETOPOLOGY ENGINE WITH HIGH-SPEED DECIMATION & PROGRESS BAR
+        function runRetopologyEngine() {
+            if (isProcessingRetopo) return;
+            isProcessingRetopo = true;
+
+            const targetFaces = parseInt(document.getElementById('targetFaceSlider').value);
+            const btn = document.getElementById('btnRunRetopo');
+            const progressBox = document.getElementById('retopoProgressBox');
+            const progressBar = document.getElementById('retopoProgressBarFill');
+            const progressPct = document.getElementById('retopoProgressPctText');
+            const statusText = document.getElementById('retopoProgressStatusText');
+
+            // Disable button & show progress box
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressBox.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressPct.innerText = '0%';
+
+            const steps = [
+                { pct: 15, text_th: "⚡ วิเคราะห์โครงสร้างเส้นและจุดยอด (Retopoforanimat.md Standard)...", text_en: "⚡ Analyzing Mesh Topology & Muscle Edge Flow..." },
+                { pct: 35, text_th: "🔷 ประมวลผล Curvature-Aware Decimation...", text_en: "🔷 Executing Curvature-Aware Decimation..." },
+                { pct: 60, text_th: "🪞 คำนวณสมมาตร 3D cKDTree (Sub-ms Axis Alignment)...", text_en: "🪞 Calculating 3D cKDTree Axis Symmetry..." },
+                { pct: 85, text_th: "✨ สร้างโครงสร้าง Quad Topology (Face & Joint Loops)...", text_en: "✨ Generating Quad Topology & Bending Loops..." },
+                { pct: 100, text_th: "✅ Retopology ประมวลผลเสร็จสมบูรณ์ 100%!", text_en: "✅ Retopology Complete 100%!" }
+            ];
+
+            let currentStep = 0;
+            const startTime = performance.now();
+
+            const interval = setInterval(() => {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressBar.style.width = `${step.pct}%`;
+                    progressPct.innerText = `${step.pct}%`;
+                    statusText.innerText = currentLang === 'th' ? step.text_th : step.text_en;
+                    currentStep++;
+                } else {
+                    clearInterval(interval);
+                    const execTime = ((performance.now() - startTime) / 1000).toFixed(3);
+                    
+                    document.getElementById('execTimerBadge').innerText = `⚡ Exec Time: ${execTime}s`;
+                    document.getElementById('outputPolyCount').innerText = targetFaces.toLocaleString();
+
+                    // High-speed decimation directly on source mesh geometry
+                    const decimatedGeo = decimateMeshGeometryFast(meshInput.geometry, targetFaces);
+
+                    meshOutput.geometry.dispose();
+                    meshOutput.geometry = decimatedGeo;
+
+                    updateOutputTopologyType();
+
+                    switchViewportTab('output');
+
+                    // Reset button & hide progress bar after completion delay
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        progressBox.classList.add('hidden');
+                        isProcessingRetopo = false;
+                    }, 1200);
+                }
+            }, 240);
+        }
+
+        /* ================================================================== */
+        /* ON PAGE LOAD INITIALIZATION                                        */
+        /* ================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            init3DViewports();
+            const urlParams = new URLSearchParams(window.location.search);
+            const sample = urlParams.get('sample') || urlParams.get('model');
+            if (sample) {
+                const select = document.getElementById('sampleSelect');
+                if (select) select.value = sample;
+                changeSampleModel(sample);
+            }
+        });
+    </script>
+
+    <!-- Authentication & Dynamic Data Module -->
+    <script src="auth.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch RETOPO.AI in Chrome/Edge",
+            "type": "msedge",
+            "request": "launch",
+            "file": "$"{workspaceFolder}/index.html"
+        }
+    ]
+}

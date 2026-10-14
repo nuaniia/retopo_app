@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retopoforanimat Standard | RETOPO.AI</title>
+    
+    <!-- Meta Description for SEO -->
+    <meta name="description" content="มาตรฐานวิชาการ 10 ข้อหลักจาก Retopoforanimat.md สำหรับงาน 3D Animation, Rigging, Skinning และ Facial Deformation">
+
+    <!-- 1. Tailwind CSS CDN -->
+    <script>
+        (function() {
+            var _w = console.warn;
+            console.warn = function() {
+                if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('cdn.tailwindcss.com') !== -1) return;
+                _w.apply(console, arguments);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        },
+                        cyber: {
+                            bg: '#0f172a',
+                            panel: '#1e293b',
+                            accent: '#38bdf8',
+                            purple: '#c084fc',
+                            emerald: '#34d399'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 2. Google Fonts (Prompt & Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 3. Font Awesome 6.4 (Icons CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS Stylesheet (<style>) -->
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-grad: linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #9333ea 100%);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Prompt', 'Inter', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ==================================================================== -->
+    <!-- 1. NAVIGATION BAR                                                    -->
+    <!-- ==================================================================== -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            
+            <!-- Logo Brand -->
+            <a href="index.html" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-300">
+                    <i class="fa-solid fa-cube text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-wider text-white">RETOPO<span class="text-sky-400">.AI</span></span>
+                    <span class="block text-[10px] text-slate-400 font-medium tracking-widest uppercase">Retopoforanimat.md Standard Engine</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+                <a href="index.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-house mr-1 text-xs"></i> <span data-i18n="nav_home">หน้าแรก</span></a>
+                <a href="studio.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-xs"></i> <span data-i18n="nav_studio">3D Studio</span></a>
+                <a href="checklist.html" class="text-sky-400 font-bold transition-colors py-1"><i class="fa-solid fa-graduation-cap mr-1 text-xs"></i> <span data-i18n="nav_checklist">Retopoforanimat Standard</span></a>
+                <a href="features.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-bolt mr-1 text-xs"></i> <span data-i18n="nav_features">ฟีเจอร์หลัก</span></a>
+                <a href="faq.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-circle-question mr-1 text-xs"></i> <span data-i18n="nav_faq">คำถามที่พบบ่อย</span></a>
+            </nav>
+
+            <!-- Language & Action Controls -->
+            <div class="flex items-center gap-3">
+                <!-- Auth Container (Desktop) -->
+                <div id="authNavContainer"></div>
+
+                <!-- Language Selector -->
+                <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-800/90 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-sky-500 cursor-pointer">
+                    <option value="th">🇹🇭 ภาษาไทย</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <!-- Launch App CTA -->
+                <a href="studio.html" class="btn-gradient text-white text-xs md:text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> <span data-i18n="btn_launch">เริ่มใช้งานระบบ</span>
+                </a>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-slate-400 hover:text-white text-xl p-2">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu Dropdown -->
+        <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-slate-800 flex flex-col gap-3 text-sm text-slate-300">
+            <a href="index.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-house mr-2"></i> <span data-i18n="nav_home">หน้าแรก</span></a>
+            <a href="studio.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 3D Studio</a>
+            <a href="checklist.html" class="text-sky-400 font-bold py-1"><i class="fa-solid fa-graduation-cap mr-2"></i> Retopoforanimat Standard</a>
+            <a href="features.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-bolt mr-2"></i> ฟีเจอร์หลัก</a>
+            <a href="faq.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-circle-question mr-2"></i> คำถามที่พบบ่อย</a>
+            <!-- Mobile Auth Container -->
+            <div id="mobileAuthNavContainer"></div>
+        </div>
+    </header>
+
+
+    <!-- ==================================================================== -->
+    <!-- 4. RETOPOFORANIMAT.MD STANDARDS SECTION                               -->
+    <!-- ==================================================================== -->
+    <main class="flex-grow py-16 px-4 max-w-7xl mx-auto w-full">
+        <div class="glass-panel p-6 md:p-10 rounded-3xl border border-slate-800 space-y-8">
+            
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950 text-sky-400 text-xs font-bold border border-sky-800 mb-2">
+                        <i class="fa-solid fa-graduation-cap"></i> Retopoforanimat.md Standard Core Engine
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-white">
+                        <span class="text-gradient">หลักการ Retopology สำหรับงาน 3D Animation</span>
+                    </h1>
+                    <p class="text-slate-400 text-sm mt-1">
+                        โครงสร้างแนวเส้น 10 ข้อหลักจาก Retopoforanimat.md สำหรับการเตรียมโมเดล Rigging, Skinning และ Facial Deformation
+                    </p>
+                </div>
+
+                <button type="button" onclick="openRetopoGuideModal()" class="bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold px-5 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+                    <i class="fa-solid fa-book-open"></i> อ่านคู่มือฉบับเต็ม Retopoforanimat.md
+                </button>
+            </div>
+
+            <!-- Grid 9 Core Principles -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- 1. Edge Flow -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-sky-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-sky-400">3.1 Edge Flow</span>
+                        <i class="fa-solid fa-water text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">การไหลของเส้นตามแนวมัดกล้ามเนื้อ</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">Edge ต้องไหลล้อมรอบเบ้าตา ปาก กราม ข้อศอก เข่า และแนวกล้ามเนื้อหลักเพื่อรองรับการยืดและพับ</p>
+                </div>
+
+                <!-- 2. Edge Loop -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-purple-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-purple-400">3.2 Edge Loop</span>
+                        <i class="fa-solid fa-circle-notch text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">วงรอบวงเส้นต่อเนื่องบริเวณข้อต่อ</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">สร้าง Edge Loop แบบวงปิดรอบข้อต่อสำคัญและใบหน้า ช่วยควบคุมการยุบเบี้ยวและรอยย่นของ Mesh</p>
+                </div>
+
+                <!-- 3. Pole Management -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-emerald-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-400">3.3 Pole Management</span>
+                        <i class="fa-solid fa-asterisk text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">วางจุดแยก Pole นอกพื้นที่ Deformation</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">หลีกเลี่ยงจุดเชื่อม 3 หรือ 5 เส้น (Poles) บริเวณข้อศอก เข่า และจุดที่พับมาก ย้ายไปอยู่บริเวณที่นิ่งกว่า</p>
+                </div>
+
+                <!-- 4. Quad Topology -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-amber-400">3.4 Quad Topology</span>
+                        <i class="fa-solid fa-square text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">โครงสร้างสี่เหลี่ยม 4 ด้าน 95-100%</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">ใช้ Quad ช่วยให้ Edge Loop ไหลต่อเนื่อง ทำ Subdivision ได้ง่าย และยืดหดตัวในงาน Skinning ได้เนียนธรรมชาติ</p>
+                </div>
+
+                <!-- 5. Facial Topology -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-rose-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-rose-400">4.1 Facial Topology</span>
+                        <i class="fa-solid fa-face-smile text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">ลูปดวงตาและปากสำหรับ Facial Rig</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">วงเส้นซ้อนกันรอบเบ้าตาสำหรับการกะพริบ และรอบริมฝีปากสำหรับการพูด/ยิ้ม สอดคล้องกับ Blend Shape</p>
+                </div>
+
+                <!-- 6. Joint Bending Loops -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-400">4.2 Joint Bending</span>
+                        <i class="fa-solid fa-bone text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">ลูปพับข้อต่อแขน ขา และข้อนิ้ว</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">เพิ่ม Edge Loop 3 วงบริเวณข้อศอกและเข่า เพื่อรองรับการพับแขนขาโดยไม่ให้โพลีกอนยุบแบนลง</p>
+                </div>
+
+                <!-- 7. Polygon Allocation Density -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-sky-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-sky-400">6. Dynamic Density</span>
+                        <i class="fa-solid fa-chart-pie text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">จัดสรรความหนาแน่น Polygon ตามพื้นที่</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">High Deformation = เพิ่มความละเอียด; Low Deformation = ลดโพลีกอน ช่วยให้ไฟล์เบาและพรีวิวเร็ว</p>
+                </div>
+
+                <!-- 8. Silhouette Preservation -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-purple-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-purple-400">8. Form Accuracy</span>
+                        <i class="fa-solid fa-cube text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">รักษารูปทรงและทรวดทรงหลักจาก High-Poly</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">เก็บเส้นขอบเงา (Silhouette) และปริมาตรสำคัญของสคัลป์ต้นฉบับไว้ให้ครบถ้วน</p>
+                </div>
+
+                <!-- 9. Clean Normals & Mesh -->
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 hover:border-emerald-500/40 transition-all space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-400">9. Pre-Rig Checklist</span>
+                        <i class="fa-solid fa-check-double text-slate-500"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">Normals ถูกทิศทาง ไร้จุดซ้อน</h4>
+                    <p class="text-slate-400 text-xs leading-relaxed">หน้า Polygon หันออกด้านนอก 100% ไม่มี Non-Manifold Geometry หรือจุด Vertex ซ้อนทับ</p>
+                </div>
+            </div>
+
+            <!-- CTA Banner to Studio -->
+            <div class="p-6 rounded-2xl bg-gradient-to-r from-sky-950/80 to-indigo-950/80 border border-sky-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-white">ทดสอบการจัดระเบียบเส้นบนโมเดล 3 มิติของคุณ</h3>
+                    <p class="text-xs text-slate-400 mt-1">อัปโหลดไฟล์ OBJ, FBX หรือ STL เพื่อทดสอบ Edge Flow และ Bending Loops</p>
+                </div>
+                <a href="studio.html" class="btn-gradient text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> ไปที่ 3D Studio
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ==================================================================== -->
+    <!-- 9. RETOPOFORANIMAT.MD FULL DOCUMENTATION MODAL                       -->
+    <!-- ==================================================================== -->
+    <div id="retopoGuideModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel max-w-4xl w-full max-h-[85vh] rounded-3xl border border-slate-800 overflow-hidden flex flex-col shadow-2xl">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-extrabold text-white">หลักการ Retopology สำหรับงาน Animation</h3>
+                        <p class="text-xs text-slate-400">สรุปมาตรฐานวิชาการจากไฟล์ Retopoforanimat.md</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRetopoGuideModal()" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 overflow-y-auto space-y-6 text-xs md:text-sm text-slate-300 leading-relaxed">
+                
+                <div class="p-4 rounded-xl bg-sky-950/40 border border-sky-800/60 text-sky-200 space-y-1">
+                    <div class="font-bold flex items-center gap-2 text-sky-400">
+                        <i class="fa-solid fa-circle-info"></i> คำจำกัดความและเป้าหมายของ Retopology
+                    </div>
+                    <p class="text-xs">
+                        Retopology คือกระบวนการปรับโครงสร้าง Polygon/Topology ของโมเดล 3 มิติใหม่ โดยมีเป้าหมายเพื่อให้โมเดลมีจำนวน Polygon ที่เหมาะสม มีการไหลของ Edge ที่เหมาะกับการ Rigging, Skinning, Animation, UV Mapping และการทำ Texture
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-base border-b border-slate-800 pb-2">1. หลักการสำคัญ 4 ด้าน (Core Principles)</h4>
+                    <ul class="list-disc list-inside space-y-2 pl-2 text-slate-300">
+                        <li><strong>Edge Flow:</strong> ทิศทางของ Edge ต้องไหลไปตามแนวมัดกล้ามเนื้อ แนวกราม รอบดวงตา และรอบปาก เพื่อรองรับการแสดงสีหน้าและการพับตัว</li>
+                        <li><strong>Edge Loop:</strong> วงเส้นต่อเนื่องแบบลูปปิดเพื่อควบคุมการเสียรูปของ Mesh บริเวณข้อต่อ</li>
+                        <li><strong>Pole Management:</strong> หลีกเลี่ยงจุดเชื่อม 3 หรือ 5 เส้น (Poles) บริเวณที่มีการยืดพับสูง เพื่อป้องกันรอยร่น Pinching</li>
+                        <li><strong>Quad Topology:</strong> รักษาสัดส่วนเฟส 4 ด้าน (Quad) ให้อยู่ระดับ 95-100% เพื่อรองรับ Subdivision และ Skinning</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-base border-b border-slate-800 pb-2">2. มาตรฐานสำหรับ Character Animation</h4>
+                    <ul class="list-disc list-inside space-y-2 pl-2 text-slate-300">
+                        <li><strong>Facial Loops:</strong> ลูปวงกลมซ้อนรอบดวงตา (กะพริบ/หรี่) และลูปรอบริมฝีปาก (พูด/ยิ้ม) สัมพันธ์กับ Facial Rig</li>
+                        <li><strong>Joint Bending:</strong> เพิ่ม Edge Loop 3 วงบริเวณข้อศอก เข่า และข้อนิ้ว ป้องกันโพลีกอนแบนยุบลงเมื่อพับขาสุด</li>
+                        <li><strong>Dynamic Density:</strong> พื้นที่เคลื่อนไหวสูง = เพิ่มความหนาแน่น; พื้นที่นิ่ง = ลดจำนวนโพลีกอนลง</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-base border-b border-slate-800 pb-2">3. Pre-Rigging Checklist (10 ข้อตรวจสอบความพร้อม)</h4>
+                    <ol class="list-decimal list-inside space-y-1.5 pl-2 text-slate-300">
+                        <li>รูปทรงโมเดลตรงตาม High-poly ต้นฉบับ</li>
+                        <li>ไม่มี Vertex หรือ Face ซ้อนกันโดยไม่จำเป็น</li>
+                        <li>Normals หันออกด้านนอก 100%</li>
+                        <li>Edge Flow ไหลตามแนวมัดกล้ามเนื้อ</li>
+                        <li>บริเวณข้อต่อมี Edge Loop เพียงพอ</li>
+                        <li>ใบหน้ามี Loop รองรับ Facial Animation</li>
+                        <li>จำนวน Polygon เหมาะสมกับงาน</li>
+                        <li>ทดลอง Deformation เบื้องต้นแล้ว</li>
+                        <li>พร้อมสำหรับการทำ UV Unwrapping และ Seam</li>
+                        <li>ตั้งชื่อ Object เป็นระบบก่อนส่งต่อให้ Rigging</li>
+                    </ol>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end">
+                <button type="button" onclick="closeRetopoGuideModal()" class="btn-gradient text-white font-bold px-6 py-2 rounded-xl text-xs">
+                    รับทราบและปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- 10. FOOTER SECTION                                                  -->
+    <!-- ==================================================================== -->
+    <footer class="mt-auto glass-panel border-t border-slate-800 py-8 px-4 text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-cube text-sm"></i>
+                </div>
+                <span>© 2026 <strong>RETOPO.AI</strong> - High-Speed 3D Retopology Suite (Retopoforanimat.md Standard Engine)</span>
+            </div>
+            <div class="flex items-center flex-wrap justify-center gap-6">
+                <a href="index.html" class="hover:text-sky-400 transition-colors">หน้าแรก</a>
+                <a href="studio.html" class="hover:text-sky-400 transition-colors">3D Studio</a>
+                <a href="checklist.html" class="text-sky-400 font-bold transition-colors">Retopoforanimat Standard</a>
+                <a href="features.html" class="hover:text-sky-400 transition-colors">ฟีเจอร์หลัก</a>
+                <a href="gallery.html" class="hover:text-sky-400 transition-colors">ตัวอย่างโมเดล</a>
+                <a href="faq.html" class="hover:text-sky-400 transition-colors">คำถามที่พบบ่อย</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Translations & Modals -->
+    <script>
+        let currentLang = 'th';
+
+        function openRetopoGuideModal() {
+            document.getElementById('retopoGuideModal').classList.remove('hidden');
+        }
+        function closeRetopoGuideModal() {
+            document.getElementById('retopoGuideModal').classList.add('hidden');
+        }
+
+        const i18nDict = {
+            th: {
+                nav_home: "หน้าแรก",
+                nav_studio: "3D Studio",
+                nav_features: "ฟีเจอร์หลัก",
+                nav_gallery: "ตัวอย่างโมเดล",
+                nav_checklist: "Retopoforanimat Standard",
+                nav_faq: "คำถามที่พบบ่อย",
+                btn_launch: "เริ่มใช้งานระบบ"
+            },
+            en: {
+                nav_home: "Home",
+                nav_studio: "3D Studio",
+                nav_features: "Features",
+                nav_gallery: "Model Gallery",
+                nav_checklist: "Retopoforanimat Standard",
+                nav_faq: "FAQ",
+                btn_launch: "Launch Studio"
+            }
+        };
+
+        function changeLanguage(langKey) {
+            currentLang = langKey;
+            const dict = i18nDict[langKey] || i18nDict['th'];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerText = dict[key];
+                }
+            });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
+
+    <!-- Authentication & Dynamic Data Module -->
+    <script src="auth.js"></script>
+</body>
+</html>
+

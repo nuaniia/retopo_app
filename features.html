@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features & Benchmark | RETOPO.AI</title>
+    
+    <!-- Meta Description for SEO -->
+    <meta name="description" content="คุณสมบัติเด่นของ RETOPO.AI Engine ขับเคลื่อนด้วย Quadric Decimation และ cKDTree ระดับ C-Kernel พร้อมผลการทดสอบประสิทธิภาพ">
+
+    <!-- 1. Tailwind CSS CDN -->
+    <script>
+        (function() {
+            var _w = console.warn;
+            console.warn = function() {
+                if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('cdn.tailwindcss.com') !== -1) return;
+                _w.apply(console, arguments);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        },
+                        cyber: {
+                            bg: '#0f172a',
+                            panel: '#1e293b',
+                            accent: '#38bdf8',
+                            purple: '#c084fc',
+                            emerald: '#34d399'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 2. Google Fonts (Prompt & Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 3. Font Awesome 6.4 (Icons CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- 4. Chart.js CDN for Analytics Benchmark -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS Stylesheet (<style>) -->
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-grad: linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #9333ea 100%);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Prompt', 'Inter', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ==================================================================== -->
+    <!-- 1. NAVIGATION BAR                                                    -->
+    <!-- ==================================================================== -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            
+            <!-- Logo Brand -->
+            <a href="index.html" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-300">
+                    <i class="fa-solid fa-cube text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-wider text-white">RETOPO<span class="text-sky-400">.AI</span></span>
+                    <span class="block text-[10px] text-slate-400 font-medium tracking-widest uppercase">Retopoforanimat.md Standard Engine</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+                <a href="index.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-house mr-1 text-xs"></i> <span data-i18n="nav_home">หน้าแรก</span></a>
+                <a href="studio.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-xs"></i> <span data-i18n="nav_studio">3D Studio</span></a>
+                <a href="checklist.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-graduation-cap mr-1 text-xs"></i> <span data-i18n="nav_checklist">Retopoforanimat Standard</span></a>
+                <a href="features.html" class="text-sky-400 font-bold transition-colors py-1"><i class="fa-solid fa-bolt mr-1 text-xs"></i> <span data-i18n="nav_features">ฟีเจอร์หลัก</span></a>
+                <a href="faq.html" class="hover:text-sky-400 transition-colors py-1"><i class="fa-solid fa-circle-question mr-1 text-xs"></i> <span data-i18n="nav_faq">คำถามที่พบบ่อย</span></a>
+            </nav>
+
+            <!-- Language & Action Controls -->
+            <div class="flex items-center gap-3">
+                <!-- Auth Container (Desktop) -->
+                <div id="authNavContainer"></div>
+
+                <!-- Language Selector -->
+                <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-800/90 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-sky-500 cursor-pointer">
+                    <option value="th">🇹🇭 ภาษาไทย</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <!-- Launch App CTA -->
+                <a href="studio.html" class="btn-gradient text-white text-xs md:text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> <span data-i18n="btn_launch">เริ่มใช้งานระบบ</span>
+                </a>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-slate-400 hover:text-white text-xl p-2">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu Dropdown -->
+        <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-slate-800 flex flex-col gap-3 text-sm text-slate-300">
+            <a href="index.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-house mr-2"></i> <span data-i18n="nav_home">หน้าแรก</span></a>
+            <a href="studio.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 3D Studio</a>
+            <a href="checklist.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-graduation-cap mr-2"></i> Retopoforanimat Standard</a>
+            <a href="features.html" class="text-sky-400 font-bold py-1"><i class="fa-solid fa-bolt mr-2"></i> ฟีเจอร์หลัก</a>
+            <a href="faq.html" class="hover:text-sky-400 py-1"><i class="fa-solid fa-circle-question mr-2"></i> คำถามที่พบบ่อย</a>
+            <!-- Mobile Auth Container -->
+            <div id="mobileAuthNavContainer"></div>
+        </div>
+    </header>
+
+
+    <!-- ==================================================================== -->
+    <!-- 5. KEY FEATURES & CAPABILITIES GRID                                  -->
+    <!-- ==================================================================== -->
+    <main class="flex-grow py-16 px-4 max-w-7xl mx-auto w-full space-y-16">
+        
+        <div class="space-y-12">
+            <div class="text-center max-w-3xl mx-auto space-y-3">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-white">
+                    <span class="text-gradient" data-i18n="feat_title">คุณสมบัติเด่นของระบบ RETOPO.AI Engine</span>
+                </h1>
+                <p class="text-slate-400 text-sm md:text-base" data-i18n="feat_sub">
+                    ขับเคลื่อนด้วยอัลกอริทึม Quadric Decimation และ cKDTree ในระดับ C-Kernel ความเร็วสูงสุด
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Feature Card 1 -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-sky-500/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2" data-i18n="f1_h">Multi-Format 3D File Loader (Up to 10GB)</h3>
+                    <p class="text-slate-400 text-xs md:text-sm leading-relaxed" data-i18n="f1_p">
+                        รองรับการอัปโหลดไฟล์โมเดล 3D หลายรูปแบบรวมทั้ง Wavefront OBJ (.obj), Filmbox (.fbx) และ Stereolithography (.stl) ขนาดใหญ่สูงสุด 10GB พร้อมแสดงผลใน 3D Viewport ทันที
+                    </p>
+                </div>
+
+                <!-- Feature Card 2 -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-draw-polygon"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2" data-i18n="f2_h">Native Quad Wavefront OBJ Export</h3>
+                    <p class="text-slate-400 text-xs md:text-sm leading-relaxed" data-i18n="f2_p">
+                        ส่งออกไฟล์ Wavefront OBJ ด้วยโครงสร้างเฟส 4 จุดยอด (f v1 v2 v3 v4) โดยตรง สามารถนำไปเปิดใช้งานร่วมกับ Blender, Maya, ZBrush และ Houdini ได้ทันที
+                    </p>
+                </div>
+
+                <!-- Feature Card 3 -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-emerald-500/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-film"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2" data-i18n="f3_h">Animation-Ready Topology Checklist</h3>
+                    <p class="text-slate-400 text-xs md:text-sm leading-relaxed" data-i18n="f3_p">
+                        ระบบตรวจสอบอัตโนมัติตามมาตรฐานงานแอนิเมชัน ทั้งทิศทางของ Face Normals, Edge Loop ความโค้งของข้อต่อ และการทำ UV Unwrapping
+                    </p>
+                </div>
+
+                <!-- Feature Card 4 -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-amber-500/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-wifi"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2" data-i18n="f4_h">Multi-Device LAN Wi-Fi Sharing</h3>
+                    <p class="text-slate-400 text-xs md:text-sm leading-relaxed" data-i18n="f4_p">
+                        รองรับการเปิดแชร์แอปพลิเคชันผ่านเครือข่าย Wi-Fi ท้องถิ่น (Local Area Network) เพื่อให้ทีมงานสามารถทดสอบบน iPad, แท็บเล็ต หรือสมาร์ทโฟนได้พร้อมกัน
+                    </p>
+                </div>
+
+                <!-- Feature Card 5 -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-rose-500/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-palette"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2" data-i18n="f5_h">Dynamic Multi-Theme UI</h3>
+                    <p class="text-slate-400 text-xs md:text-sm leading-relaxed" data-i18n="f5_p">
+                        เลือกสลับธีมสีของส่วนต่อประสานผู้ใช้ได้หลากหลายรูปแบบ (Cyber Dark, Neon Violet, Emerald Cyber, Sunset Gold, Modern Light) ปรับแต่งได้ตามความชอบ
+                    </p>
+                </div>
+
+                <!-- Feature Card 6 -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-language"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2" data-i18n="f6_h">Bilingual UI (TH / EN)</h3>
+                    <p class="text-slate-400 text-xs md:text-sm leading-relaxed" data-i18n="f6_p">
+                        รองรับการสลับภาษาแบบสมบูรณ์ทั้งภาษาไทยและภาษาอังกฤษ ครอบคลุมปุ่มกด ฉลากควบคุม และรายงานการประเมินความพร้อม
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================================================================== -->
+        <!-- 6. BENCHMARK PERFORMANCE ANALYTICS CHART                            -->
+        <!-- ==================================================================== -->
+        <div class="glass-panel p-6 md:p-8 rounded-2xl border border-slate-800 space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-sky-400"></i> <span data-i18n="chart_title">ผลการทดสอบประสิทธิภาพเวลาในการประมวลผล (Performance Benchmark)</span>
+                    </h2>
+                    <p class="text-slate-400 text-xs md:text-sm mt-1" data-i18n="chart_sub">เปรียบเทียบระยะเวลาที่ใช้ในการ Retopology ระหว่างไฟล์เมช 3D ขนาดต่างๆ</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs bg-sky-950 text-sky-300 border border-sky-800 px-3 py-1 rounded-full font-mono">10GB Stream Accelerated</span>
+                </div>
+            </div>
+
+            <!-- Chart Canvas Container -->
+            <div class="w-full h-72 md:h-80">
+                <canvas id="benchmarkChart"></canvas>
+            </div>
+        </div>
+
+        <!-- CTA Banner to Studio -->
+        <div class="p-6 rounded-2xl bg-gradient-to-r from-sky-950/80 to-purple-950/80 border border-sky-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <h3 class="text-base font-bold text-white">พร้อมสัมผัสความเร็วในการทำ Retopology แล้วหรือยัง?</h3>
+                <p class="text-xs text-slate-400 mt-1">ทดลองลดโพลีกอนและจัดระเบียบโครงสร้าง Quad บน 3D Viewport แบบเรียลไทม์</p>
+            </div>
+            <a href="studio.html" class="btn-gradient text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-play"></i> เปิดใช้งาน 3D Studio
+            </a>
+        </div>
+
+    </main>
+
+    <!-- ==================================================================== -->
+    <!-- 9. RETOPOFORANIMAT.MD FULL DOCUMENTATION MODAL                       -->
+    <!-- ==================================================================== -->
+    <div id="retopoGuideModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel max-w-4xl w-full max-h-[85vh] rounded-3xl border border-slate-800 overflow-hidden flex flex-col shadow-2xl">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-extrabold text-white">หลักการ Retopology สำหรับงาน Animation</h3>
+                        <p class="text-xs text-slate-400">สรุปมาตรฐานวิชาการจากไฟล์ Retopoforanimat.md</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRetopoGuideModal()" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 overflow-y-auto space-y-6 text-xs md:text-sm text-slate-300 leading-relaxed">
+                <div class="p-4 rounded-xl bg-sky-950/40 border border-sky-800/60 text-sky-200 space-y-1">
+                    <div class="font-bold flex items-center gap-2 text-sky-400">
+                        <i class="fa-solid fa-circle-info"></i> คำจำกัดความและเป้าหมายของ Retopology
+                    </div>
+                    <p class="text-xs">
+                        Retopology คือกระบวนการปรับโครงสร้าง Polygon/Topology ของโมเดล 3 มิติใหม่ โดยมีเป้าหมายเพื่อให้โมเดลมีจำนวน Polygon ที่เหมาะสม มีการไหลของ Edge ที่เหมาะกับการ Rigging, Skinning, Animation, UV Mapping และการทำ Texture
+                    </p>
+                </div>
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-base border-b border-slate-800 pb-2">1. หลักการสำคัญ 4 ด้าน (Core Principles)</h4>
+                    <ul class="list-disc list-inside space-y-2 pl-2 text-slate-300">
+                        <li><strong>Edge Flow:</strong> ทิศทางของ Edge ต้องไหลไปตามแนวมัดกล้ามเนื้อ แนวกราม รอบดวงตา และรอบปาก เพื่อรองรับการแสดงสีหน้าและการพับตัว</li>
+                        <li><strong>Edge Loop:</strong> วงเส้นต่อเนื่องแบบลูปปิดเพื่อควบคุมการเสียรูปของ Mesh บริเวณข้อต่อ</li>
+                        <li><strong>Pole Management:</strong> หลีกเลี่ยงจุดเชื่อม 3 หรือ 5 เส้น (Poles) บริเวณที่มีการยืดพับสูง เพื่อป้องกันรอยร่น Pinching</li>
+                        <li><strong>Quad Topology:</strong> รักษาสัดส่วนเฟส 4 ด้าน (Quad) ให้อยู่ระดับ 95-100% เพื่อรองรับ Subdivision และ Skinning</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end">
+                <button type="button" onclick="closeRetopoGuideModal()" class="btn-gradient text-white font-bold px-6 py-2 rounded-xl text-xs">
+                    รับทราบและปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- 10. FOOTER SECTION                                                  -->
+    <!-- ==================================================================== -->
+    <footer class="mt-auto glass-panel border-t border-slate-800 py-8 px-4 text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-cube text-sm"></i>
+                </div>
+                <span>© 2026 <strong>RETOPO.AI</strong> - High-Speed 3D Retopology Suite (Retopoforanimat.md Standard Engine)</span>
+            </div>
+            <div class="flex items-center flex-wrap justify-center gap-6">
+                <a href="index.html" class="hover:text-sky-400 transition-colors">หน้าแรก</a>
+                <a href="studio.html" class="hover:text-sky-400 transition-colors">3D Studio</a>
+                <a href="checklist.html" class="hover:text-sky-400 transition-colors">Retopoforanimat Standard</a>
+                <a href="features.html" class="text-sky-400 font-bold transition-colors">ฟีเจอร์หลัก</a>
+                <a href="gallery.html" class="hover:text-sky-400 transition-colors">ตัวอย่างโมเดล</a>
+                <a href="faq.html" class="hover:text-sky-400 transition-colors">คำถามที่พบบ่อย</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chart.js & Logic Scripts -->
+    <script>
+        let currentLang = 'th';
+
+        function openRetopoGuideModal() {
+            document.getElementById('retopoGuideModal').classList.remove('hidden');
+        }
+        function closeRetopoGuideModal() {
+            document.getElementById('retopoGuideModal').classList.add('hidden');
+        }
+
+        const i18nDict = {
+            th: {
+                nav_home: "หน้าแรก",
+                nav_studio: "3D Studio",
+                nav_features: "ฟีเจอร์หลัก",
+                nav_gallery: "ตัวอย่างโมเดล",
+                nav_checklist: "Retopoforanimat Standard",
+                nav_faq: "คำถามที่พบบ่อย",
+                btn_launch: "เริ่มใช้งานระบบ",
+                feat_title: "คุณสมบัติเด่นของระบบ RETOPO.AI Engine",
+                feat_sub: "ขับเคลื่อนด้วยอัลกอริทึม Quadric Decimation และ cKDTree ในระดับ C-Kernel ความเร็วสูงสุด",
+                f1_h: "Multi-Format 3D File Loader (Up to 10GB)",
+                f1_p: "รองรับการอัปโหลดไฟล์โมเดล 3D หลายรูปแบบรวมทั้ง Wavefront OBJ (.obj), Filmbox (.fbx) และ Stereolithography (.stl) ขนาดใหญ่สูงสุด 10GB พร้อมแสดงผลใน 3D Viewport ทันที",
+                f2_h: "Native Quad Wavefront OBJ Export",
+                f2_p: "ส่งออกไฟล์ Wavefront OBJ ด้วยโครงสร้างเฟส 4 จุดยอด (f v1 v2 v3 v4) โดยตรง สามารถนำไปเปิดใช้งานร่วมกับ Blender, Maya, ZBrush และ Houdini ได้ทันที",
+                f3_h: "Animation-Ready Topology Checklist",
+                f3_p: "ระบบตรวจสอบอัตโนมัติตามมาตรฐานงานแอนิเมชัน ทั้งทิศทางของ Face Normals, Edge Loop ความโค้งของข้อต่อ และการทำ UV Unwrapping",
+                f4_h: "Multi-Device LAN Wi-Fi Sharing",
+                f4_p: "รองรับการเปิดแชร์แอปพลิเคชันผ่านเครือข่าย Wi-Fi ท้องถิ่น (Local Area Network) เพื่อให้ทีมงานสามารถทดสอบบน iPad, แท็บเล็ต หรือสมาร์ทโฟนได้พร้อมกัน",
+                f5_h: "Dynamic Multi-Theme UI",
+                f5_p: "เลือกสลับธีมสีของส่วนต่อประสานผู้ใช้ได้หลากหลายรูปแบบ (Cyber Dark, Neon Violet, Emerald Cyber, Sunset Gold, Modern Light) ปรับแต่งได้ตามความชอบ",
+                f6_h: "Bilingual UI (TH / EN)",
+                f6_p: "รองรับการสลับภาษาแบบสมบูรณ์ทั้งภาษาไทยและภาษาอังกฤษ ครอบคลุมปุ่มกด ฉลากควบคุม และรายงานการประเมินความพร้อม",
+                chart_title: "ผลการทดสอบประสิทธิภาพเวลาในการประมวลผล (Performance Benchmark)",
+                chart_sub: "เปรียบเทียบระยะเวลาที่ใช้ในการ Retopology ระหว่างไฟล์เมช 3D ขนาดต่างๆ"
+            },
+            en: {
+                nav_home: "Home",
+                nav_studio: "3D Studio",
+                nav_features: "Features",
+                nav_gallery: "Model Gallery",
+                nav_checklist: "Retopoforanimat Standard",
+                nav_faq: "FAQ",
+                btn_launch: "Launch Studio",
+                feat_title: "RETOPO.AI Engine Core Features",
+                feat_sub: "Powered by fast C-kernel Quadric Decimation and cKDTree nearest neighbor search.",
+                f1_h: "Multi-Format 3D File Loader (Up to 10GB)",
+                f1_p: "Support uploading Wavefront OBJ (.obj), Filmbox (.fbx), and Stereolithography (.stl) 3D meshes up to 10GB for instant 3D viewport rendering.",
+                f2_h: "Native Quad Wavefront OBJ Export",
+                f2_p: "Export 4-vertex quad OBJ files directly compatible with Blender, Maya, ZBrush, and Houdini.",
+                f3_h: "Animation-Ready Topology Checklist",
+                f3_p: "Automated verification against 3D animation standards including normals, edge flow loops, and UV seams.",
+                f4_h: "Multi-Device LAN Wi-Fi Sharing",
+                f4_p: "Easily share live web sessions across local Wi-Fi networks for mobile and tablet testing.",
+                f5_h: "Dynamic Multi-Theme UI",
+                f5_p: "Switch between customized UI themes (Cyber Dark, Neon Violet, Emerald Cyber, Sunset Gold, Modern Light).",
+                f6_h: "Bilingual UI (TH / EN)",
+                f6_p: "Full multi-language support for control panels, labels, and assessment reports.",
+                chart_title: "Performance Benchmark Execution Summary",
+                chart_sub: "Processing time comparison across various 3D mesh face counts."
+            }
+        };
+
+        function changeLanguage(langKey) {
+            currentLang = langKey;
+            const dict = i18nDict[langKey] || i18nDict['th'];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerText = dict[key];
+                }
+            });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function initBenchmarkChart() {
+            const ctx = document.getElementById('benchmarkChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['High-Poly Sphere (.obj)', 'Torus Prop (.stl)', 'Capsule Prop (.fbx)', 'Character Bust (.obj)', 'Mechanical Part (.stl)'],
+                    datasets: [
+                        {
+                            label: 'Original Polygon Count (Faces)',
+                            data: [5120, 1152, 640, 15000, 32000],
+                            backgroundColor: 'rgba(56, 189, 248, 0.4)',
+                            borderColor: '#38bdf8',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Retopologized Poly Count (Faces)',
+                            data: [2560, 576, 320, 3500, 8000],
+                            backgroundColor: 'rgba(52, 211, 153, 0.6)',
+                            borderColor: '#34d399',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { family: 'Prompt' } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8', font: { family: 'Prompt' } },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8', font: { family: 'Prompt' } },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initBenchmarkChart();
+        });
+    </script>
+
+    <!-- Authentication & Dynamic Data Module -->
+    <script src="auth.js"></script>
+</body>
+</html>
+
