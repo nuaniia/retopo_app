@@ -237,9 +237,9 @@
                     </label>
 
                     <!-- File Drop Zone Area -->
-                    <div id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)" class="relative p-5 rounded-2xl border-2 border-dashed border-slate-700 hover:border-sky-500/80 bg-slate-900/80 hover:bg-slate-800/60 text-center cursor-pointer transition-all duration-300 group">
+                    <div id="dropZone" onclick="handleUploadClick()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)" class="relative p-5 rounded-2xl border-2 border-dashed border-slate-700 hover:border-sky-500/80 bg-slate-900/80 hover:bg-slate-800/60 text-center cursor-pointer transition-all duration-300 group">
                         <input type="file" id="fileInput" accept=".obj,.fbx,.stl" onchange="handleFileSelect(event)" class="hidden">
-                        
+
                         <!-- Drag Icon & Text -->
                         <div id="dropZoneContent" class="space-y-2">
                             <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center mx-auto text-2xl group-hover:scale-110 transition-transform">
@@ -443,7 +443,7 @@
                         <span class="text-[11px] font-bold bg-sky-950 text-sky-300 px-2.5 py-1 rounded-lg border border-sky-800">Quad OBJ Ready</span>
                     </div>
 
-                    <button type="button" id="btnDownloadModel" onclick="downloadProcessedModel()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5">
+                    <button type="button" id="btnDownloadModel" onclick="handleDownloadClick()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5">
                         <i class="fa-solid fa-download text-lg"></i> <span data-i18n="btn_download_now">ดาวน์โหลดไฟล์โมเดลสำเร็จ (.OBJ)</span>
                     </button>
                 </div>
@@ -1664,6 +1664,30 @@
 
     <!-- Authentication & Dynamic Data Module -->
     <script src="auth.js"></script>
+    <script>
+        // ฟังก์ชันจัดการการคลิกปุ่มอัปโหลด (เช็ค Login ก่อนเปิดตัวเลือกไฟล์)
+        function handleUploadClick() {
+            // ตรวจสอบว่าเข้าสู่ระบบแล้วหรือยัง โดยอิงจากตัวแปร window.currentUser ใน auth.js
+            if (window.currentUser) {
+                // ถ้าเข้าสู่ระบบแล้ว -> พาไปหน้า studio.html ทันที
+                document.getElementById('fileInput').click();
+            } else {
+                // ถ้ายังไม่ได้เข้าสู่ระบบ -> เปิดหน้าต่าง Login Modal จาก auth.js ขึ้นมาทันที
+                openAuthModal('login');
+            }
+        }
+
+        // ฟังก์ชันจัดการการคลิกปุ่มดาวน์โหลด (เช็ค Login ก่อนให้ดาวน์โหลด)
+        function handleDownloadClick() {
+            if (window.currentUser) {
+                // ถ้าเข้าสู่ระบบแล้ว -> ทำการดาวน์โหลดโมเดลตามปกติ
+                downloadProcessedModel();
+            } else {
+                // ถ้ายังไม่ได้เข้าสู่ระบบ -> แจ้งเตือนและเปิด Modal เข้าสู่ระบบทันที
+                openAuthModal('login');
+            }
+        }
+    </script>
 </body>
 </html>
 
